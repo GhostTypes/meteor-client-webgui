@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(test:*)",
+      "WebSearch",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.baeldung.com)",
+      "Bash(npm run build:*)",
+      "Bash(if [ -d ai_reference ])",
+      "Bash(then echo 'Directory exists')",
+      "Bash(else echo \"Directory does not exist\")",
+      "Bash(fi)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

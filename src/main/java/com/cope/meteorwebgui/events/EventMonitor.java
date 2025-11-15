@@ -1,0 +1,132 @@
+package com.cope.meteorwebgui.events;
+
+import com.cope.meteorwebgui.server.MeteorWebServer;
+import meteordevelopment.meteorclient.events.meteor.ActiveModulesChangedEvent;
+import meteordevelopment.meteorclient.settings.Setting;
+import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.orbit.EventHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
+/**
+ * Monitors module and setting changes and broadcasts them to WebSocket clients
+ */
+public class EventMonitor {
+    private static final Logger LOG = LoggerFactory.getLogger("WebGUI Event Monitor");
+
+    private final MeteorWebServer server;
+    private final Map<Setting<?>, Consumer<?>> originalCallbacks = new HashMap<>();
+    private final Map<String, Boolean> moduleStates = new HashMap<>();
+
+    public EventMonitor(MeteorWebServer server) {
+        this.server = server;
+    }
+
+    /**
+     * Start monitoring all modules and settings
+     */
+    public void startMonitoring() {
+        LOG.info("Starting event monitoring");
+
+        // Monitor all existing modules and initialize state tracking
+        for (Module module : Modules.get().getAll()) {
+            moduleStates.put(module.name, module.isActive());
+            monitorModuleSettings(module);
+        }
+
+        LOG.info("Event monitoring started for {} modules", Modules.get().getCount());
+    }
+
+    /**
+     * Handle module toggle events
+     * ActiveModulesChangedEvent is a singleton event that fires whenever any module toggles,
+     * but doesn't tell us which one. So we compare current state to our tracked state.
+     */
+    @EventHandler
+    private void onModuleToggle(ActiveModulesChangedEvent event) {
+        // Find which module(s) changed state
+        for (Module module : Modules.get().getAll()) {
+            Boolean previousState = moduleStates.get(module.name);
+            boolean currentState = module.isActive();
+
+            if (previousState == null || previousState != currentState) {
+                // State changed!
+                moduleStates.put(module.name, currentState);
+
+                if (server.isRunning()) {
+                    server.broadcastModuleStateChange(module);
+                    LOG.debug("Module state changed: {} -> {}", module.name, currentState);
+                }
+            }
+        }
+    }
+
+    /**
+     * Wrap setting callbacks
+     */
+    private void monitorModuleSettings(Module module) {
+        for (SettingGroup group : module.settings) {
+            for (Setting<?> setting : group) {
+                wrapSettingCallback(module, setting);
+            }
+        }
+    }
+
+    /**
+     * Wrap a setting's onChanged callback to broadcast value changes
+     */
+    @SuppressWarnings("unchecked")
+    private <T> void wrapSettingCallback(Module module, Setting<T> setting) {
+        try {
+            // Get the existing onChanged callback via reflection
+            var onChangedField = Setting.class.getDeclaredField("onChanged");
+            onChangedField.setAccessible(true);
+            Consumer<T> originalCallback = (Consumer<T>) onChangedField.get(setting);
+
+            // Store original for potential unwrapping later
+            if (originalCallback != null) {
+                originalCallbacks.put(setting, originalCallback);
+            }
+
+            // Create wrapped callback
+            Consumer<T> wrappedCallback = value -> {
+                // Call original callback if it exists
+                if (originalCallback != null) {
+                    try {
+                        originalCallback.accept(value);
+                    } catch (Exception e) {
+                        LOG.error("Error in original callback for {}.{}: {}",
+                            module.name, setting.name, e.getMessage());
+                    }
+                }
+
+                // Broadcast to WebSocket clients
+                if (server.isRunning()) {
+                    server.broadcastSettingChange(module, setting);
+                }
+            };
+
+            // Set the wrapped callback
+            onChangedField.set(setting, wrappedCallback);
+
+        } catch (Exception e) {
+            LOG.error("Failed to wrap callback for setting {}.{}: {}",
+                module.name, setting.name, e.getMessage());
+        }
+    }
+
+    /**
+     * Stop monitoring (cleanup)
+     */
+    public void stopMonitoring() {
+        LOG.info("Stopping event monitoring");
+        // Could restore original callbacks here if needed
+        originalCallbacks.clear();
+    }
+}

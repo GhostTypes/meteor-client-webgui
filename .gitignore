@@ -1,0 +1,40 @@
+# Gradle build output
+.gradle/
+.gradle-cache/
+build/
+out/
+classes/
+**/build/
+
+# Gradle wrapper
+!gradle/wrapper/gradle-wrapper.jar
+
+# Log files
+*.log
+
+# Eclipse
+*.launch
+.classpath
+.project
+bin/
+
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+.settings/
+
+# macOS / Windows cruft
+*.DS_Store
+Thumbs.db
+
+# Fabric / Loom runtime dirs
+loom-cache/
+run/
+
+# Reference repos
+ai_reference/*
