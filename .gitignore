@@ -38,3 +38,12 @@ run/
 
 # Reference repos
 ai_reference/*
+
+# WebUI - Node.js dependencies
+webui/node_modules/
+
+# WebUI - Built output (regenerated during build)
+webui/dist/
+
+# WebUI - Generated resources (bundled in JAR)
+src/main/resources/webui/

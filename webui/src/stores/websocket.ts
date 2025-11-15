@@ -23,10 +23,12 @@ export const useWebSocketStore = defineStore('websocket', () => {
     }
 
     try {
-      // Connect to WebSocket server (always on port 8080)
-      // In dev mode (localhost:3000), this connects to localhost:8080
-      const host = window.location.hostname || 'localhost'
-      const wsUrl = `ws://${host}:8080`
+      // Connect to WebSocket server on /ws path
+      // In dev mode (localhost:3000), Vite proxies /ws to localhost:8080
+      // In production, uses same host/port as the page was loaded from
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const host = window.location.host || 'localhost:8080'
+      const wsUrl = `${protocol}//${host}/ws`
       console.log('Connecting to WebSocket:', wsUrl)
 
       ws.value = new WebSocket(wsUrl)

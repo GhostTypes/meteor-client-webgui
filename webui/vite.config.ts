@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
+  base: '/', // Use absolute paths for bundling in JAR
   server: {
     port: 3000,
     proxy: {

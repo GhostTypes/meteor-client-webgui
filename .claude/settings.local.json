@@ -15,7 +15,10 @@
       "Bash(fi)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__desktop-notifications__send-notification",
+      "Bash(jar:*)",
+      "mcp__cloudscraper-mcp__scrape_url"
     ],
     "deny": [],
     "ask": []

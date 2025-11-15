@@ -294,3 +294,24 @@ Always test both directions:
 3. **Settings sync**: Change setting in either direction, verify sync
 
 See `TESTING_CHECKLIST.md` for comprehensive QA checklist.
+
+## Desktop Notifications
+
+**IMPORTANT**: Use the `mcp__desktop-notifications__send-notification` tool to get the user's attention when:
+- Completing significant tasks or milestones
+- Finishing autonomous work sessions
+- Encountering blockers that need user input
+- Completing builds, tests, or other long-running operations
+
+Be proactive but don't spam - use notifications for meaningful updates that warrant interrupting the user's workflow.
+
+Example usage:
+```
+mcp__desktop-notifications__send-notification({
+  title: "Build Complete",
+  message: "meteor-webgui-0.1.0.jar compiled successfully with no errors",
+  priority: "normal",
+  category: "success",
+  sound: true
+})
+```

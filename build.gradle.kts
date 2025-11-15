@@ -32,8 +32,9 @@ dependencies {
     // Meteor - using local JAR for consistent version
     modImplementation(files("libs/meteor-client-${properties["meteor_version"] as String}.jar"))
 
-    // WebSocket server for WebUI communication
-    modImplementation("org.java-websocket:Java-WebSocket:1.5.7")!!.let { include(it) }
+    // NanoHTTPD for HTTP server and WebSocket support
+    modImplementation("org.nanohttpd:nanohttpd:2.3.1")!!.let { include(it) }
+    modImplementation("org.nanohttpd:nanohttpd-websocket:2.3.1")!!.let { include(it) }
 
     // JSON serialization for WebSocket messages
     modImplementation("com.google.code.gson:gson:2.11.0")!!.let { include(it) }
@@ -81,5 +82,47 @@ tasks {
 
     test {
         useJUnitPlatform()
+    }
+
+    // Build WebUI with npm
+    register<Exec>("buildWebUI") {
+        group = "build"
+        description = "Build the Vue.js WebUI"
+
+        val webuiDir = file("webui")
+        val npmCommand = if (System.getProperty("os.name").lowercase().contains("windows")) "npm.cmd" else "npm"
+
+        workingDir = webuiDir
+        commandLine(npmCommand, "run", "build")
+
+        // Install dependencies first if node_modules doesn't exist
+        doFirst {
+            if (!file("webui/node_modules").exists()) {
+                exec {
+                    workingDir = webuiDir
+                    commandLine(npmCommand, "install")
+                }
+            }
+        }
+    }
+
+    // Copy built WebUI to resources
+    register<Copy>("copyWebUI") {
+        group = "build"
+        description = "Copy built WebUI files to resources"
+        dependsOn("buildWebUI")
+
+        from("webui/dist")
+        into("src/main/resources/webui")
+    }
+
+    // Make processResources depend on copyWebUI
+    processResources {
+        dependsOn("copyWebUI")
+    }
+
+    // Clean generated WebUI resources
+    clean {
+        delete("src/main/resources/webui")
     }
 }
