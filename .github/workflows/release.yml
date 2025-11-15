@@ -68,7 +68,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build --no-configuration-cache
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
