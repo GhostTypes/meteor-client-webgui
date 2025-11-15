@@ -46,7 +46,8 @@ public class MeteorWebServer {
 
         // Create and start HTTP server (which also handles WebSocket upgrades)
         httpServer = new MeteorHTTPServer(host, port, webSocketHandler);
-        httpServer.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
+        // Use 0 timeout for WebSocket connections (persistent connections don't need read timeout)
+        httpServer.start(0, false);
 
         running = true;
         LOG.info("WebGUI server started on {}:{}", host, port);

@@ -1,0 +1,245 @@
+<template>
+  <div class="setting-item">
+    <div class="setting-header">
+      <span class="setting-title">{{ setting.title }}</span>
+      <span class="count">{{ items.length }} items</span>
+      <span class="type-badge">{{ setting.type }}</span>
+    </div>
+    <p class="setting-description">{{ setting.description }}</p>
+
+    <!-- Add New Item -->
+    <div class="add-input">
+      <input
+        v-model="newItem"
+        type="text"
+        placeholder="Enter item ID..."
+        @keyup.enter="addItem"
+        class="text-input"
+      />
+      <button @click="addItem" class="add-button" :disabled="!newItem.trim()">
+        Add
+      </button>
+    </div>
+
+    <!-- Item List -->
+    <div v-if="items.length > 0" class="items-list">
+      <div v-for="(item, index) in items" :key="index" class="item-chip">
+        <span>{{ formatItem(item) }}</span>
+        <button @click="removeItem(index)" class="remove-button">×</button>
+      </div>
+    </div>
+
+    <div v-else class="empty-message">
+      No items added yet. This is a generic list editor for {{ setting.type }}.
+    </div>
+
+    <div class="info-message">
+      <span class="info-icon">ℹ️</span>
+      <span>This setting type ({{ setting.type }}) uses a generic list editor. Add items manually.</span>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import type { ModuleInfo, SettingMetadata } from '../../stores/modules'
+import { useWebSocketStore } from '../../stores/websocket'
+
+const props = defineProps<{
+  module: ModuleInfo
+  setting: SettingMetadata
+}>()
+
+const wsStore = useWebSocketStore()
+const newItem = ref('')
+
+const items = computed(() => {
+  // Handle both array formats
+  if (Array.isArray(props.setting.value.items)) {
+    return props.setting.value.items
+  }
+  // Fallback for other formats
+  return []
+})
+
+function formatItem(item: any) {
+  if (typeof item === 'string') {
+    // Format ID strings nicely
+    const parts = item.split(':')
+    const name = parts[parts.length - 1] || item
+    return name.replace(/_/g, ' ')
+  }
+  return String(item)
+}
+
+function addItem() {
+  const trimmed = newItem.value.trim()
+  if (!trimmed) return
+
+  // Check for duplicates
+  if (items.value.includes(trimmed)) {
+    newItem.value = ''
+    return
+  }
+
+  const updated = [...items.value, trimmed]
+  updateValue(updated)
+  newItem.value = ''
+}
+
+function removeItem(index: number) {
+  const updated = items.value.filter((_, i) => i !== index)
+  updateValue(updated)
+}
+
+function updateValue(items: any[]) {
+  wsStore.send({
+    type: 'setting.update',
+    data: {
+      moduleName: props.module.name,
+      settingName: props.setting.name,
+      value: { items }
+    }
+  })
+}
+</script>
+
+<style scoped>
+.setting-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.count {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  padding: 0.25rem 0.5rem;
+  background: var(--color-background-soft);
+  border-radius: 4px;
+}
+
+.type-badge {
+  font-size: 0.65rem;
+  color: var(--color-text-secondary);
+  padding: 0.25rem 0.5rem;
+  background: var(--color-background-mute);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+.add-input {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.text-input {
+  flex: 1;
+  padding: 0.5rem;
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.add-button {
+  padding: 0.5rem 1rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.add-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.add-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.items-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.item-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  font-family: monospace;
+}
+
+.remove-button {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.remove-button:hover {
+  background: var(--color-danger);
+  color: white;
+}
+
+.empty-message {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--color-background-soft);
+  border: 1px dashed var(--color-border);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.info-message {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: rgb(96, 165, 250);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-icon {
+  font-size: 1rem;
+}
+</style>

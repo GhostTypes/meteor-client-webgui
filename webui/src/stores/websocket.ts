@@ -8,11 +8,31 @@ export interface WSMessage {
   id?: string
 }
 
+export interface RegistryData {
+  blocks: {
+    blocks: Array<{ id: string; namespace: string }>
+    byNamespace: Record<string, string[]>
+  }
+  items: {
+    items: Array<{ id: string; namespace: string }>
+    byNamespace: Record<string, string[]>
+  }
+  entities: {
+    entities: Array<{ id: string; namespace: string }>
+    byNamespace: Record<string, string[]>
+  }
+  statusEffects: Array<{ id: string; namespace: string }>
+  modules: {
+    byCategory: Record<string, Array<{ name: string; title: string; category: string }>>
+  }
+}
+
 export const useWebSocketStore = defineStore('websocket', () => {
   const ws = ref<WebSocket | null>(null)
   const connected = ref(false)
   const reconnecting = ref(false)
   const error = ref<string | null>(null)
+  const registries = ref<RegistryData | null>(null)
 
   const modulesStore = useModulesStore()
 
@@ -79,6 +99,11 @@ export const useWebSocketStore = defineStore('websocket', () => {
     switch (message.type) {
       case 'initial.state':
         modulesStore.setInitialState(message.data.modules)
+        // Store registry data
+        if (message.data.registries) {
+          registries.value = message.data.registries
+          console.log('Registry data loaded:', Object.keys(message.data.registries))
+        }
         break
 
       case 'module.state.changed':
@@ -94,6 +119,28 @@ export const useWebSocketStore = defineStore('websocket', () => {
           message.data.settingName,
           message.data.value
         )
+        break
+
+      case 'registry.data':
+        // Handle lazy-loaded registry data
+        if (!registries.value) {
+          registries.value = {} as RegistryData
+        }
+
+        const regType = message.data.registryType
+        console.log('Registry data received for:', regType)
+
+        if (regType === 'blocks') {
+          registries.value.blocks = message.data.blocks
+        } else if (regType === 'items') {
+          registries.value.items = message.data.items
+        } else if (regType === 'entities') {
+          registries.value.entities = message.data.entities
+        } else if (regType === 'statusEffects') {
+          registries.value.statusEffects = message.data.statusEffects
+        } else if (regType === 'modules') {
+          registries.value.modules = message.data.modules
+        }
         break
 
       case 'error':
@@ -127,12 +174,22 @@ export const useWebSocketStore = defineStore('websocket', () => {
     connected.value = false
   }
 
+  function requestRegistry(type: string) {
+    console.log('Requesting registry:', type)
+    send({
+      type: 'registry.request',
+      data: { registry: type }
+    })
+  }
+
   return {
     connected,
     reconnecting,
     error,
+    registries,
     connect,
     disconnect,
-    send
+    send,
+    requestRegistry
   }
 })

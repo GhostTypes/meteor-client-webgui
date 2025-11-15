@@ -1,6 +1,7 @@
 package com.cope.meteorwebgui.server;
 
 import com.cope.meteorwebgui.mapping.ModuleMapper;
+import com.cope.meteorwebgui.mapping.RegistryProvider;
 import com.cope.meteorwebgui.mapping.SettingsReflector;
 import com.cope.meteorwebgui.protocol.MessageType;
 import com.cope.meteorwebgui.protocol.WSMessage;
@@ -37,10 +38,11 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
             JsonObject initialData = new JsonObject();
             initialData.add("modules", ModuleMapper.mapAllModulesByCategory());
 
+            // Registry data is now loaded on-demand via REGISTRY_REQUEST
             WSMessage message = new WSMessage(MessageType.INITIAL_STATE, initialData);
             send(GSON.toJson(message));
 
-            LOG.info("Sent initial state to client");
+            LOG.info("Sent initial state to client (registries will be loaded on-demand)");
         } catch (Exception e) {
             LOG.error("Failed to send initial state: {}", e.getMessage(), e);
         }
@@ -70,6 +72,7 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
                 case MODULE_LIST -> handleModuleList(wsMessage);
                 case SETTING_UPDATE -> handleSettingUpdate(wsMessage);
                 case SETTING_GET -> handleSettingGet(wsMessage);
+                case REGISTRY_REQUEST -> handleRegistryRequest(wsMessage);
                 case PING -> handlePing(wsMessage);
                 default -> sendError("Unsupported message type: " + type);
             }
@@ -206,6 +209,50 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
             send(GSON.toJson(new WSMessage(MessageType.PONG, new JsonObject(), message.getId())));
         } catch (IOException e) {
             LOG.error("Failed to send pong: {}", e.getMessage(), e);
+        }
+    }
+
+    private void handleRegistryRequest(WSMessage message) {
+        try {
+            JsonObject data = message.getData().getAsJsonObject();
+            String registryType = data.get("registry").getAsString();
+
+            LOG.debug("Registry request received for: {}", registryType);
+
+            JsonObject response = new JsonObject();
+            switch (registryType) {
+                case "blocks" -> {
+                    response.add("blocks", RegistryProvider.getAllBlocks());
+                    LOG.info("Sent blocks registry to client");
+                }
+                case "items" -> {
+                    response.add("items", RegistryProvider.getAllItems());
+                    LOG.info("Sent items registry to client");
+                }
+                case "entities" -> {
+                    response.add("entities", RegistryProvider.getAllEntityTypes());
+                    LOG.info("Sent entities registry to client");
+                }
+                case "statusEffects" -> {
+                    response.add("statusEffects", RegistryProvider.getAllStatusEffects());
+                    LOG.info("Sent statusEffects registry to client");
+                }
+                case "modules" -> {
+                    response.add("modules", RegistryProvider.getAllModules());
+                    LOG.info("Sent modules registry to client");
+                }
+                default -> {
+                    sendError("Unknown registry type: " + registryType, message.getId());
+                    return;
+                }
+            }
+
+            response.addProperty("registryType", registryType);
+            send(GSON.toJson(new WSMessage(MessageType.REGISTRY_DATA, response, message.getId())));
+
+        } catch (Exception e) {
+            LOG.error("Failed to send registry: {}", e.getMessage(), e);
+            sendError("Failed to load registry: " + e.getMessage(), message.getId());
         }
     }
 

@@ -5,6 +5,7 @@ public enum MessageType {
     INITIAL_STATE("initial.state"),
     MODULE_STATE_CHANGED("module.state.changed"),
     SETTING_VALUE_CHANGED("setting.value.changed"),
+    REGISTRY_DATA("registry.data"),
     ERROR("error"),
 
     // Client -> Server
@@ -12,6 +13,7 @@ public enum MessageType {
     MODULE_LIST("module.list"),
     SETTING_UPDATE("setting.update"),
     SETTING_GET("setting.get"),
+    REGISTRY_REQUEST("registry.request"),
     PING("ping"),
     PONG("pong");
 
