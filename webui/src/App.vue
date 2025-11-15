@@ -1,86 +1,149 @@
 <template>
   <div class="app">
     <header class="header">
-      <h1>Meteor WebGUI</h1>
+      <div>
+        <p class="eyebrow">Meteor Client</p>
+        <h1>Meteor WebGUI</h1>
+      </div>
       <div class="connection-status">
         <span v-if="wsStore.connected" class="status-dot connected"></span>
         <span v-else-if="wsStore.reconnecting" class="status-dot reconnecting"></span>
         <span v-else class="status-dot disconnected"></span>
         <span class="status-text">
-          {{ wsStore.connected ? 'Connected' : wsStore.reconnecting ? 'Reconnecting...' : 'Disconnected' }}
+          {{ wsStore.connected ? 'Connected' : wsStore.reconnecting ? 'Reconnecting…' : 'Disconnected' }}
         </span>
+        <button v-if="!wsStore.connected" class="btn-primary retry-button" @click="wsStore.connect()">
+          Retry
+        </button>
       </div>
     </header>
 
-    <div v-if="modulesStore.loading" class="loading">
-      <p>Loading modules...</p>
+    <div v-if="modulesStore.loading" class="state-view">
+      <p>Loading modules…</p>
     </div>
 
-    <div v-else-if="wsStore.error" class="error">
+    <div v-else-if="wsStore.error" class="state-view error">
       <p>Error: {{ wsStore.error }}</p>
-      <button @click="wsStore.connect()">Retry Connection</button>
+      <button class="btn-primary" @click="wsStore.connect()">Retry Connection</button>
     </div>
 
     <main v-else class="main">
-      <aside class="sidebar">
-        <div class="category-filter">
-          <button
-            v-for="category in modulesStore.categories"
-            :key="category"
-            :class="{ active: selectedCategory === category }"
-            @click="selectedCategory = category"
-          >
-            {{ category }}
-          </button>
-        </div>
-      </aside>
-
-      <div class="content">
-        <ModuleList
-          v-if="selectedCategory"
-          :category="selectedCategory"
-          :modules="modulesStore.byCategory[selectedCategory] || []"
+      <div class="main-content">
+        <ModuleToolbar
+          v-model:selected-category="selectedCategory"
+          v-model:search-query="searchQuery"
+          v-model:show-active-only="showActiveOnly"
+          v-model:density="cardDensity"
+          :categories="toolbarCategories"
+          :active-toggle-disabled="isFavoritesSelected && favoritesEmpty"
         />
+
+        <div class="module-content">
+          <ModuleList
+            v-if="selectedCategory"
+            :category="selectedCategory"
+            :modules="filteredModules"
+            :density="cardDensity"
+            :empty-message="isFavoritesSelected ? favoritesEmptyMessage : undefined"
+            @open-settings="openSettings"
+          />
+
+          <div v-else class="empty-state">
+            <p>Select a category to view its modules.</p>
+          </div>
+        </div>
       </div>
     </main>
+
+    <ModuleSettingsDialog
+      :open="Boolean(activeModule)"
+      :module="activeModule"
+      @close="closeSettings"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useWebSocketStore } from './stores/websocket'
-import { useModulesStore } from './stores/modules'
+import { useModulesStore, type ModuleInfo } from './stores/modules'
 import ModuleList from './components/ModuleList.vue'
+import ModuleToolbar from './components/ModuleToolbar.vue'
+import ModuleSettingsDialog from './components/ModuleSettingsDialog.vue'
+
+type CardDensity = 'comfortable' | 'compact'
+const FAVORITES_CATEGORY = 'Favorites'
 
 const wsStore = useWebSocketStore()
 const modulesStore = useModulesStore()
+
 const selectedCategory = ref<string | null>(null)
+const searchQuery = ref('')
+const showActiveOnly = ref(false)
+const cardDensity = ref<CardDensity>('comfortable')
+const activeModule = ref<ModuleInfo | null>(null)
+const favoritesEmptyMessage = 'No favorites yet. Tap the star icon on a module to save it here.'
+const isFavoritesSelected = computed(() => selectedCategory.value === FAVORITES_CATEGORY)
+const toolbarCategories = computed(() => {
+  const list = modulesStore.categories as unknown as string[]
+  return [...list, FAVORITES_CATEGORY]
+})
+const favoritesEmpty = computed(() => modulesStore.favoriteModules.length === 0)
+
+const filteredModules = computed(() => {
+  if (!selectedCategory.value) return []
+  const modules = isFavoritesSelected.value
+    ? modulesStore.favoriteModules
+    : modulesStore.byCategory[selectedCategory.value] || []
+  return modules.filter(module => {
+    if (showActiveOnly.value && !module.active) return false
+    if (!searchQuery.value) return true
+    const term = searchQuery.value.toLowerCase()
+    return (
+      module.title.toLowerCase().includes(term) ||
+      module.description.toLowerCase().includes(term) ||
+      module.name.toLowerCase().includes(term)
+    )
+  })
+})
 
 onMounted(() => {
   wsStore.connect()
-
-  // Auto-select first category when loaded
-  setTimeout(() => {
-    if (modulesStore.categories.length > 0 && !selectedCategory.value) {
-      selectedCategory.value = modulesStore.categories[0]
-    }
-  }, 500)
 })
+
+watch(
+  () => modulesStore.categories,
+  categories => {
+    if (!categories.length) {
+      if (selectedCategory.value !== FAVORITES_CATEGORY) {
+        selectedCategory.value = null
+      }
+      return
+    }
+    if (!selectedCategory.value) {
+      selectedCategory.value = categories[0]
+      return
+    }
+    if (
+      selectedCategory.value !== FAVORITES_CATEGORY &&
+      !categories.includes(selectedCategory.value)
+    ) {
+      selectedCategory.value = categories[0]
+    }
+  },
+  { immediate: true }
+)
+
+function openSettings(module: ModuleInfo) {
+  activeModule.value = module
+}
+
+function closeSettings() {
+  activeModule.value = null
+}
 </script>
 
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: #0a0a0a;
-  color: #ffffff;
-}
-
+<style scoped>
 .app {
   min-height: 100vh;
   display: flex;
@@ -88,122 +151,112 @@ body {
 }
 
 .header {
-  background: #1a1a1a;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #333;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 5, 5, 0.8);
+  backdrop-filter: blur(6px);
+}
+
+.eyebrow {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.25rem;
 }
 
 .header h1 {
-  font-size: 1.5rem;
-  color: #4ba6ff;
+  margin: 0;
+  font-size: 1.75rem;
 }
 
 .connection-status {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
 }
 
 .status-dot.connected {
-  background: #4ade80;
-  box-shadow: 0 0 10px #4ade80;
+  background: var(--color-success);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.6);
 }
 
 .status-dot.reconnecting {
-  background: #fbbf24;
+  background: var(--color-warning);
   animation: pulse 1s infinite;
 }
 
 .status-dot.disconnected {
-  background: #ef4444;
+  background: var(--color-danger);
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .status-text {
-  font-size: 0.875rem;
-  color: #aaa;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
 }
 
-.loading,
-.error {
+.retry-button {
+  padding-inline: 1.5rem;
+}
+
+.state-view {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1rem;
+  font-size: 1rem;
+  color: var(--color-text-muted);
 }
 
-.error button {
-  padding: 0.5rem 1rem;
-  background: #4ba6ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.error button:hover {
-  background: #3b96ef;
+.state-view.error {
+  flex-direction: column;
 }
 
 .main {
   flex: 1;
-  display: flex;
-  overflow: hidden;
+  padding: 1.5rem;
 }
 
-.sidebar {
-  width: 200px;
-  background: #1a1a1a;
-  border-right: 1px solid #333;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-.category-filter {
+.main-content {
+  max-width: 1600px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1.25rem;
 }
 
-.category-filter button {
-  padding: 0.75rem;
-  background: #2a2a2a;
-  color: #aaa;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s;
+.module-content {
+  background: rgba(16, 20, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-soft);
+  min-height: 400px;
 }
 
-.category-filter button:hover {
-  background: #333;
-  color: #fff;
-}
-
-.category-filter button.active {
-  background: #4ba6ff;
-  color: #fff;
-}
-
-.content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
+.empty-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 3rem 1rem;
 }
 </style>

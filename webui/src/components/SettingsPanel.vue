@@ -5,11 +5,13 @@
       :key="group.name"
       class="setting-group"
     >
-      <h4 v-if="group.name">{{ group.name }}</h4>
+      <div v-if="group.name" class="group-header">
+        <span>{{ group.name }}</span>
+      </div>
       <div
         v-for="setting in group.settings"
         :key="setting.name"
-        class="setting-item"
+        class="setting-item setting-field"
         v-show="setting.visible"
       >
         <component
@@ -94,15 +96,19 @@ function getSettingComponent(type: string) {
 .settings-panel {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
-.setting-group h4 {
-  font-size: 0.875rem;
-  color: #888;
+.group-header {
   text-transform: uppercase;
-  margin-bottom: 0.75rem;
-  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+  position: sticky;
+  top: 0;
+  background: rgba(9, 12, 18, 0.95);
+  padding: 0.15rem 0;
 }
 
 .setting-item {
