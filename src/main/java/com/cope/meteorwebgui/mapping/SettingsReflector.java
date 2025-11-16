@@ -4,22 +4,37 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import meteordevelopment.meteorclient.renderer.Fonts;
+import meteordevelopment.meteorclient.renderer.text.FontFace;
+import meteordevelopment.meteorclient.renderer.text.FontFamily;
+import meteordevelopment.meteorclient.renderer.text.FontInfo;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.utils.misc.ISerializable;
+import meteordevelopment.meteorclient.utils.misc.Keybind;
+import meteordevelopment.meteorclient.utils.misc.MyPotion;
+import meteordevelopment.meteorclient.utils.network.PacketUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.particle.ParticleType;
+import net.minecraft.potion.Potion;
+import net.minecraft.component.type.PotionContentsComponent;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.nbt.NbtCompound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Locale;
 
 /**
  * Reflects on Meteor Client settings to extract metadata and manipulate values
@@ -159,6 +175,7 @@ public class SettingsReflector {
                     valueObj.addProperty("g", color.g);
                     valueObj.addProperty("b", color.b);
                     valueObj.addProperty("a", color.a);
+                    valueObj.addProperty("rainbow", color.rainbow);
                 }
                 case BLOCK_POS -> {
                     BlockPos pos = (BlockPos) value;
@@ -184,8 +201,33 @@ public class SettingsReflector {
                         valueObj.addProperty("error", "Unsupported vector type: " + value.getClass().getName());
                     }
                 }
-                case KEYBIND -> valueObj.addProperty("value", value.toString());
-                case BLOCK, ITEM, POTION -> valueObj.addProperty("value", value.toString());
+                case KEYBIND -> writeKeybindValue(valueObj, (Keybind) value);
+                case BLOCK -> {
+                    Identifier id = Registries.BLOCK.getId((Block) value);
+                    if (id != null) {
+                        valueObj.addProperty("id", id.toString());
+                        valueObj.addProperty("value", id.toString());
+                    }
+                }
+                case ITEM -> {
+                    Identifier id = Registries.ITEM.getId((Item) value);
+                    if (id != null) {
+                        valueObj.addProperty("id", id.toString());
+                        valueObj.addProperty("value", id.toString());
+                    }
+                }
+                case POTION -> {
+                    Identifier id = null;
+                    if (value instanceof Potion potion) {
+                        id = Registries.POTION.getId(potion);
+                    } else if (value instanceof MyPotion myPotion) {
+                        id = extractPotionId(myPotion.potion);
+                    }
+                    if (id != null) {
+                        valueObj.addProperty("id", id.toString());
+                        valueObj.addProperty("value", id.toString());
+                    }
+                }
                 case BLOCK_LIST -> {
                     @SuppressWarnings("unchecked")
                     List<Block> blocks = (List<Block>) value;
@@ -239,6 +281,7 @@ public class SettingsReflector {
                         colorObj.addProperty("g", color.g);
                         colorObj.addProperty("b", color.b);
                         colorObj.addProperty("a", color.a);
+                        colorObj.addProperty("rainbow", color.rainbow);
                         array.add(colorObj);
                     }
                     valueObj.add("items", array);
@@ -311,9 +354,36 @@ public class SettingsReflector {
                     Set<Class<? extends Packet<?>>> packets = (Set<Class<? extends Packet<?>>>) value;
                     JsonArray array = new JsonArray();
                     for (Class<? extends Packet<?>> packet : packets) {
-                        array.add(packet.getSimpleName());
+                        array.add(PacketUtils.getName(packet));
                     }
                     valueObj.add("items", array);
+                }
+                case FONT_FACE -> {
+                    FontFace fontFace = (FontFace) value;
+                    if (fontFace != null) {
+                        valueObj.addProperty("family", fontFace.info.family());
+                        valueObj.addProperty("type", fontFace.info.type().name());
+                        valueObj.addProperty("label", fontFace.info.toString());
+                    }
+                }
+                case BLOCK_DATA -> {
+                    @SuppressWarnings("unchecked")
+                    Map<Block, ?> blockData = (Map<Block, ?>) value;
+                    JsonArray entries = new JsonArray();
+                    for (Map.Entry<Block, ?> entry : blockData.entrySet()) {
+                        Identifier id = Registries.BLOCK.getId(entry.getKey());
+                        if (id == null) continue;
+                        JsonObject entryObj = new JsonObject();
+                        entryObj.addProperty("block", id.toString());
+                        Object data = entry.getValue();
+                        if (data instanceof ISerializable<?> serializable) {
+                            entryObj.addProperty("data", serializable.toTag().toString());
+                        } else {
+                            entryObj.addProperty("data", String.valueOf(data));
+                        }
+                        entries.add(entryObj);
+                    }
+                    valueObj.add("entries", entries);
                 }
                 default -> valueObj.addProperty("value", value.toString());
             }
@@ -331,7 +401,17 @@ public class SettingsReflector {
                     ENCHANTMENT_LIST, PARTICLE_TYPE_LIST, SOUND_EVENT_LIST,
                     STATUS_EFFECT_LIST, STORAGE_BLOCK_LIST, STRING_LIST,
                     COLOR_LIST, PACKET_LIST, SCREEN_HANDLER_LIST -> valueObj.add("items", new JsonArray());
-            case STATUS_EFFECT_AMPLIFIER_MAP -> valueObj.add("entries", new JsonArray());
+            case STATUS_EFFECT_AMPLIFIER_MAP, BLOCK_DATA -> valueObj.add("entries", new JsonArray());
+            case KEYBIND -> addDefaultKeybindValue(valueObj);
+            case BLOCK, ITEM, POTION -> {
+                valueObj.add("value", JsonNull.INSTANCE);
+                valueObj.addProperty("id", "");
+            }
+            case FONT_FACE -> {
+                valueObj.addProperty("family", "");
+                valueObj.addProperty("type", "");
+                valueObj.addProperty("label", "");
+            }
             default -> valueObj.add("value", JsonNull.INSTANCE);
         }
     }
@@ -380,6 +460,30 @@ public class SettingsReflector {
                     meta.addProperty("format", "rgba");
                     meta.addProperty("minValue", 0);
                     meta.addProperty("maxValue", 255);
+                    meta.addProperty("supportsRainbow", true);
+                }
+                case KEYBIND -> {
+                    meta.addProperty("supportsMouse", true);
+                    meta.addProperty("supportsModifiers", true);
+                }
+                case BLOCK -> {
+                    meta.addProperty("registry", "blocks");
+                    meta.addProperty("searchable", true);
+                }
+                case ITEM -> {
+                    meta.addProperty("registry", "items");
+                    meta.addProperty("searchable", true);
+                }
+                case POTION -> {
+                    JsonArray values = new JsonArray();
+                    for (MyPotion value : MyPotion.values()) {
+                        JsonObject obj = new JsonObject();
+                        Identifier id = extractPotionId(value.potion);
+                        obj.addProperty("id", id != null ? id.toString() : value.name());
+                        obj.addProperty("label", value.name());
+                        values.add(obj);
+                    }
+                    meta.add("values", values);
                 }
                 case BLOCK_LIST -> {
                     meta.addProperty("registry", "blocks");
@@ -413,6 +517,7 @@ public class SettingsReflector {
                 }
                 case COLOR_LIST -> {
                     meta.addProperty("itemType", "color");
+                    meta.addProperty("supportsRainbow", true);
                 }
                 case BLOCK_POS -> {
                     meta.addProperty("minY", -64);
@@ -422,6 +527,8 @@ public class SettingsReflector {
                     meta.addProperty("keyRegistry", "statusEffects");
                     meta.addProperty("valueType", "integer");
                 }
+                case FONT_FACE -> meta.add("families", buildFontFamiliesMetadata());
+                case BLOCK_DATA -> meta.addProperty("editable", false);
             }
         } catch (Exception e) {
             LOG.error("Failed to get type metadata for setting {}: {}", setting.name, e.getMessage());
@@ -465,9 +572,56 @@ public class SettingsReflector {
                     color.g = valueData.get("g").getAsInt();
                     color.b = valueData.get("b").getAsInt();
                     color.a = valueData.get("a").getAsInt();
+                    color.rainbow = valueData.has("rainbow") && valueData.get("rainbow").getAsBoolean();
                     color.validate();
                     colorSetting.onChanged();
                     return true;
+                }
+                case KEYBIND -> {
+                    Setting<Keybind> keybindSetting = (Setting<Keybind>) setting;
+                    Keybind keybind = keybindSetting.get();
+                    boolean isKey = valueData.get("isKey").getAsBoolean();
+                    int inputValue = valueData.get("value").getAsInt();
+                    int modifiers = valueData.has("modifiers") ? valueData.get("modifiers").getAsInt() : 0;
+                    if (keybind != null) {
+                        keybind.set(isKey, inputValue, modifiers);
+                        keybindSetting.onChanged();
+                        return true;
+                    }
+                    return false;
+                }
+                case BLOCK -> {
+                    Setting<Block> blockSetting = (Setting<Block>) setting;
+                    Identifier id = readIdentifier(valueData, setting, "id");
+                    if (id == null) return false;
+                    Block block = Registries.BLOCK.get(id);
+                    if (block == null || !Registries.BLOCK.getId(block).equals(id)) {
+                        LOG.warn("Invalid block ID '{}' for setting {}", id, setting.name);
+                        return false;
+                    }
+                    return blockSetting.set(block);
+                }
+                case ITEM -> {
+                    Setting<Item> itemSetting = (Setting<Item>) setting;
+                    Identifier id = readIdentifier(valueData, setting, "id");
+                    if (id == null) return false;
+                    Item item = Registries.ITEM.get(id);
+                    if (item == null || !Registries.ITEM.getId(item).equals(id)) {
+                        LOG.warn("Invalid item ID '{}' for setting {}", id, setting.name);
+                        return false;
+                    }
+                    return itemSetting.set(item);
+                }
+                case POTION -> {
+                    Setting<Potion> potionSetting = (Setting<Potion>) setting;
+                    Identifier id = readIdentifier(valueData, setting, "id");
+                    if (id == null) return false;
+                    Potion potion = Registries.POTION.get(id);
+                    if (potion == null || !Registries.POTION.getId(potion).equals(id)) {
+                        LOG.warn("Invalid potion ID '{}' for setting {}", id, setting.name);
+                        return false;
+                    }
+                    return potionSetting.set(potion);
                 }
                 case BLOCK_POS -> {
                     Setting<BlockPos> posSetting = (Setting<BlockPos>) setting;
@@ -572,6 +726,9 @@ public class SettingsReflector {
                             colorObj.get("b").getAsInt(),
                             colorObj.get("a").getAsInt()
                         );
+                        if (colorObj.has("rainbow")) {
+                            color.rainbow = colorObj.get("rainbow").getAsBoolean();
+                        }
                         colors.add(color);
                     }
                     return colorList.set(colors);
@@ -686,6 +843,34 @@ public class SettingsReflector {
                     }
                     return mapSetting.set(map);
                 }
+                case PACKET_LIST -> {
+                    Setting<Set<Class<? extends Packet<?>>>> packetSetting = (Setting<Set<Class<? extends Packet<?>>>>) setting;
+                    JsonArray items = valueData.getAsJsonArray("items");
+                    Set<Class<? extends Packet<?>>> packets = new ObjectOpenHashSet<>();
+                    for (int i = 0; i < items.size(); i++) {
+                        try {
+                            String name = items.get(i).getAsString();
+                            Class<? extends Packet<?>> packet = PacketUtils.getPacket(name);
+                            if (packet != null) packets.add(packet);
+                            else LOG.warn("Unknown packet '{}' in setting {}", name, setting.name);
+                        } catch (Exception e) {
+                            LOG.warn("Invalid packet entry in setting {}: {}", setting.name, e.getMessage());
+                        }
+                    }
+                    return packetSetting.set(packets);
+                }
+                case FONT_FACE -> {
+                    Setting<FontFace> fontFaceSetting = (Setting<FontFace>) setting;
+                    if (!valueData.has("family") || !valueData.has("type")) return false;
+                    String family = valueData.get("family").getAsString();
+                    String typeName = valueData.get("type").getAsString();
+                    FontFace fontFace = findFontFace(family, typeName);
+                    if (fontFace == null) {
+                        LOG.warn("Invalid font face {}-{} for setting {}", family, typeName, setting.name);
+                        return false;
+                    }
+                    return fontFaceSetting.set(fontFace);
+                }
                 default -> {
                     // Try parse for other types
                     if (valueData.has("value")) {
@@ -700,4 +885,81 @@ public class SettingsReflector {
 
         return false;
     }
+
+
+    private static void writeKeybindValue(JsonObject valueObj, Keybind keybind) {
+        if (keybind == null) {
+            addDefaultKeybindValue(valueObj);
+            return;
+        }
+
+        NbtCompound tag = keybind.toTag();
+        valueObj.addProperty("isKey", tag.getBoolean("isKey", false));
+        valueObj.addProperty("value", tag.getInt("value", -1));
+        valueObj.addProperty("modifiers", tag.getInt("modifiers", 0));
+        valueObj.addProperty("label", keybind.toString());
+    }
+
+    private static void addDefaultKeybindValue(JsonObject valueObj) {
+        valueObj.addProperty("isKey", true);
+        valueObj.addProperty("value", -1);
+        valueObj.addProperty("modifiers", 0);
+        valueObj.addProperty("label", "None");
+    }
+
+    private static JsonArray buildFontFamiliesMetadata() {
+        JsonArray families = new JsonArray();
+        for (FontFamily family : Fonts.FONT_FAMILIES) {
+            JsonObject familyObj = new JsonObject();
+            familyObj.addProperty("name", family.getName());
+            JsonArray types = new JsonArray();
+            for (FontInfo.Type type : FontInfo.Type.values()) {
+                if (family.hasType(type)) types.add(type.name());
+            }
+            familyObj.add("types", types);
+            families.add(familyObj);
+        }
+        return families;
+    }
+
+    private static FontFace findFontFace(String familyName, String typeName) {
+        if (familyName == null || typeName == null) return null;
+        String normalizedType = typeName.toUpperCase(Locale.ROOT);
+        for (FontFamily family : Fonts.FONT_FAMILIES) {
+            if (!family.getName().equalsIgnoreCase(familyName)) continue;
+            try {
+                FontInfo.Type type = FontInfo.Type.valueOf(normalizedType);
+                FontFace fontFace = family.get(type);
+                if (fontFace != null) return fontFace;
+            } catch (IllegalArgumentException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+
+    private static Identifier extractPotionId(ItemStack stack) {
+        if (stack == null) return null;
+        PotionContentsComponent contents = stack.get(DataComponentTypes.POTION_CONTENTS);
+        if (contents == null) return null;
+        var entryOpt = contents.potion();
+        if (entryOpt.isEmpty()) return null;
+        return entryOpt.get().getKey().map(RegistryKey::getValue).orElse(null);
+    }
+
+    private static Identifier readIdentifier(JsonObject valueData, Setting<?> setting, String key) {
+        if (!valueData.has(key)) {
+            LOG.warn("Missing '{}' value for setting {}", key, setting.name);
+            return null;
+        }
+        try {
+            String raw = valueData.get(key).getAsString();
+            return Identifier.of(raw);
+        } catch (Exception e) {
+            LOG.warn("Invalid identifier for setting {}: {}", setting.name, e.getMessage());
+            return null;
+        }
+    }
+
 }

@@ -21,11 +21,15 @@
       </button>
     </div>
 
+    <div class="filter-input" v-if="items.length > 8">
+      <input v-model="filterQuery" type="search" placeholder="Filter values..." />
+    </div>
+
     <!-- Item List -->
-    <div v-if="items.length > 0" class="items-list">
-      <div v-for="(item, index) in items" :key="index" class="item-chip">
-        <span>{{ formatItem(item) }}</span>
-        <button @click="removeItem(index)" class="remove-button">×</button>
+    <div v-if="filteredItems.length > 0" class="items-list">
+      <div v-for="entry in filteredItems" :key="entry.index" class="item-chip">
+        <span>{{ formatItem(entry.value) }}</span>
+        <button @click="removeItem(entry.index)" class="remove-button">×</button>
       </div>
     </div>
 
@@ -52,14 +56,20 @@ const props = defineProps<{
 
 const wsStore = useWebSocketStore()
 const newItem = ref('')
+const filterQuery = ref('')
 
 const items = computed(() => {
-  // Handle both array formats
   if (Array.isArray(props.setting.value.items)) {
     return props.setting.value.items
   }
-  // Fallback for other formats
   return []
+})
+
+const filteredItems = computed(() => {
+  const mapped = items.value.map((value, index) => ({ value, index }))
+  if (!filterQuery.value) return mapped
+  const needle = filterQuery.value.toLowerCase()
+  return mapped.filter(entry => formatItem(entry.value).toLowerCase().includes(needle))
 })
 
 function formatItem(item: any) {
@@ -171,6 +181,19 @@ function updateValue(items: any[]) {
 .add-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.filter-input {
+  margin-top: 0.5rem;
+}
+
+.filter-input input {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-text);
 }
 
 .items-list {

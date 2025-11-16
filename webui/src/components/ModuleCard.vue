@@ -1,16 +1,18 @@
 <template>
-  <article class="module-card" :class="{ active: module.active }">
-    <header class="module-header">
-      <div class="module-info">
-        <p class="module-name">{{ module.name }}</p>
-        <h3>{{ module.title }}</h3>
-      </div>
-      <div class="module-actions">
+  <div class="module-card-wrapper" :class="{ active: module.active }">
+    <article
+      class="module-card"
+      role="button"
+      tabindex="0"
+      @click="handleCardToggle"
+      @keydown.enter.prevent="handleCardToggle"
+      @keydown.space.prevent="handleCardToggle"
+    >
+      <header class="module-header">
         <button
           class="favorite-button"
           :class="{ active: isFavorite }"
           @click.stop="toggleFavorite"
-          :aria-pressed="isFavorite"
           :title="isFavorite ? 'Remove from favorites' : 'Add to favorites'"
         >
           <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -19,34 +21,29 @@
             />
           </svg>
         </button>
-        <button
-          class="toggle-button"
-          :class="{ active: module.active }"
-          @click="toggleModule"
-          :disabled="toggling"
-        >
-          {{ module.active ? 'Disable' : 'Enable' }}
-        </button>
+
+        <div class="module-title">
+          <p class="module-name">{{ module.name }}</p>
+          <h3>{{ module.title }}</h3>
+        </div>
+      </header>
+
+      <p class="description">
+        {{ module.description }}
+      </p>
+
+      <div class="module-meta">
+        <span class="chip">{{ module.addon }}</span>
+        <span class="chip muted">{{ module.settingGroups?.length || 0 }} setting groups</span>
       </div>
-    </header>
 
-    <p class="description">
-      {{ module.description }}
-    </p>
-
-    <div class="module-meta">
-      <span class="addon-badge">{{ module.addon }}</span>
-      <span class="settings-count">
-        {{ module.settingGroups?.length || 0 }} setting groups
-      </span>
-    </div>
-
-    <footer class="card-footer">
-      <button class="ghost-button" @click="emit('open-settings', module)">
-        Configure
-      </button>
-    </footer>
-  </article>
+      <footer class="card-footer">
+        <button class="btn btn-ghost" @click.stop="emit('open-settings', module)">
+          Configure
+        </button>
+      </footer>
+    </article>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -86,147 +83,125 @@ async function toggleModule() {
   }, 300)
 }
 
+function handleCardToggle() {
+  toggleModule()
+}
+
 function toggleFavorite() {
   modulesStore.toggleFavorite(props.module.name)
 }
 </script>
 
 <style scoped>
+.module-card-wrapper {
+  position: relative;
+  border-radius: var(--radius-md);
+}
+
+.module-card-wrapper.active .module-card {
+  border-color: rgba(75, 166, 255, 0.5);
+  background: var(--color-surface-2);
+  box-shadow: 0 20px 50px rgba(40, 90, 150, 0.35);
+}
+
 .module-card {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
-  padding: 1.1rem;
-  background: linear-gradient(180deg, rgba(16, 20, 26, 0.85), rgba(9, 11, 15, 0.9));
-  box-shadow: 0 20px 55px rgba(5, 5, 5, 0.35);
+  padding: 1.25rem;
+  background: var(--color-surface-1);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  transition: transform var(--transition-base), border var(--transition-base), box-shadow var(--transition-base);
-  min-height: 220px;
+  gap: 1rem;
+  min-height: 230px;
+  transition: border var(--transition-base), box-shadow var(--transition-base);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
 }
 
 .module-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(75, 166, 255, 0.4);
-  box-shadow: 0 25px 60px rgba(12, 16, 24, 0.45);
+  border-color: rgba(75, 166, 255, 0.35);
 }
 
-.module-card.active {
-  border-color: rgba(75, 166, 255, 0.65);
+.module-card:focus-visible {
+  outline: none;
+  border-color: rgba(75, 166, 255, 0.6);
+  box-shadow: 0 0 0 2px rgba(75, 166, 255, 0.3);
 }
 
 .module-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.75rem;
-}
-
-.module-info {
-  flex: 1;
-}
-
-.module-actions {
-  display: flex;
   align-items: center;
-  gap: 0.4rem;
-}
-
-.module-name {
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
-  color: var(--color-text-muted);
-  margin-bottom: 0.2rem;
-}
-
-.module-info h3 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.description {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-  flex: 1;
-  min-height: 45px;
-}
-
-.module-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-}
-
-.addon-badge {
-  border-radius: 999px;
-  padding: 0.2rem 0.75rem;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.settings-count {
-  font-size: 0.75rem;
+  justify-content: center;
+  position: relative;
 }
 
 .favorite-button {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  position: absolute;
+  left: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-surface-2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
 }
 
 .favorite-button svg {
-  width: 16px;
-  height: 16px;
-  fill: rgba(255, 255, 255, 0.4);
-  transition: fill var(--transition-base);
+  width: 20px;
+  height: 20px;
+  fill: rgba(255, 255, 255, 0.45);
 }
 
 .favorite-button.active svg {
   fill: #ffc857;
 }
 
-.favorite-button:hover svg {
-  fill: #ffd479;
+.module-title {
+  text-align: center;
 }
 
-.toggle-button {
-  min-width: 110px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  font-size: 0.85rem;
+.module-name {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.25rem;
 }
 
-.toggle-button.active {
-  background: rgba(74, 222, 128, 0.12);
-  border-color: rgba(74, 222, 128, 0.4);
+.module-title h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.description {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+  text-align: center;
+  min-height: 48px;
+}
+
+.module-meta {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chip.muted {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-muted);
 }
 
 .card-footer {
   display: flex;
-  justify-content: flex-end;
-  margin-top: auto;
+  justify-content: center;
 }
 
-.ghost-button {
-  border-radius: 999px;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 0.4rem 1.2rem;
-  font-size: 0.85rem;
-  color: var(--color-text);
-}
-
-.ghost-button:hover {
-  border-color: rgba(75, 166, 255, 0.6);
-  color: var(--color-accent);
+.card-footer .btn {
+  min-width: 140px;
 }
 </style>

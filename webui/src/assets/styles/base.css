@@ -1,22 +1,27 @@
 :root {
   color-scheme: dark;
   --color-bg: #050505;
-  --color-surface: #10141a;
-  --color-surface-elevated: #161c24;
-  --color-border: #222a36;
-  --color-border-strong: #2f3a4a;
+  --color-surface-1: #0c1017;
+  --color-surface-2: #121824;
+  --color-surface-3: #182033;
+  --color-border: #202838;
+  --color-border-strong: #2d374a;
   --color-text: #f5f7fb;
   --color-text-muted: #9aa5b5;
   --color-accent: #4ba6ff;
   --color-accent-strong: #2b82e8;
+  --color-primary: #4ba6ff;
   --color-success: #4ade80;
   --color-danger: #ef4444;
   --color-warning: #fbbf24;
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.3);
+  --color-background-soft: var(--color-surface-2);
+  --color-background-mute: var(--color-surface-1);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --shadow-soft: 0 10px 35px rgba(5, 7, 15, 0.35);
   --shadow-ring: 0 0 0 1px rgba(75, 166, 255, 0.4);
-  --transition-base: 140ms ease-in-out;
+  --transition-base: 160ms ease;
+  --button-height: 2.4rem;
 }
 
 *,
@@ -46,33 +51,56 @@ textarea {
   color: inherit;
 }
 
+.btn,
 button {
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  background: var(--color-border);
+  background: var(--color-surface-2);
   color: var(--color-text);
-  padding: 0.55rem 1.1rem;
+  padding: 0 1rem;
+  height: var(--button-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   cursor: pointer;
-  transition: background var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
+  transition: background var(--transition-base), border-color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
+.btn:hover:not(:disabled),
 button:hover:not(:disabled) {
-  background: var(--color-border-strong);
-  box-shadow: var(--shadow-soft);
+  background: var(--color-surface-3);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
+.btn:disabled,
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .btn-primary {
   background: var(--color-accent);
-  color: #fff;
+  color: #050b13;
+  border-color: transparent;
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-strong);
+  color: #fff;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--color-border);
+}
+
+.chip {
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.65rem;
+  font-size: 0.75rem;
+  background: var(--color-surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 input[type='text'],
@@ -101,10 +129,10 @@ select:focus {
 
 input[type='checkbox'] {
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 2px solid var(--color-border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -115,8 +143,8 @@ input[type='checkbox'] {
 
 input[type='checkbox']::after {
   content: '';
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 2px;
   background: transparent;
   transition: background var(--transition-base);
@@ -158,29 +186,35 @@ input[type='range']::-webkit-slider-thumb:hover {
 select {
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--color-text) 50%), linear-gradient(135deg, var(--color-text) 50%, transparent 50%);
-  background-position: calc(100% - 22px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
-  background-size: 10px 10px;
+  background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 10px) calc(50% - 2px);
+  background-size: 8px 8px;
   background-repeat: no-repeat;
-  padding-right: 2.5rem;
+  padding-right: 2rem;
+}
+
+select option,
+select optgroup {
+  background: var(--color-surface-1);
+  color: var(--color-text);
 }
 
 .pill-button {
-  border-radius: 999px;
-  padding: 0.4rem 1rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.85rem;
+  background: var(--color-surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   color: var(--color-text-muted);
 }
 
 .pill-button.active {
-  background: rgba(75, 166, 255, 0.15);
-  border-color: rgba(75, 166, 255, 0.3);
+  background: rgba(75, 166, 255, 0.18);
+  border-color: rgba(75, 166, 255, 0.4);
   color: var(--color-text);
 }
 
 .setting-field {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--color-surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
   padding: 0.85rem;
   transition: border var(--transition-base), background var(--transition-base);

@@ -24,6 +24,10 @@
           <input type="number" v-model.number="newColor.b" min="0" max="255" placeholder="B" class="rgba-input" />
           <input type="number" v-model.number="newColor.a" min="0" max="255" placeholder="A" class="rgba-input" />
         </div>
+
+        <label class="rainbow-select">
+          <input type="checkbox" v-model="newColor.rainbow" /> Rainbow
+        </label>
       </div>
 
       <button @click="addColor" class="add-button">Add Color</button>
@@ -36,8 +40,12 @@
         <div class="color-values">
           <span class="rgb">RGB: {{ color.r }}, {{ color.g }}, {{ color.b }}</span>
           <span class="alpha">A: {{ color.a }}</span>
+          <span v-if="color.rainbow" class="rainbow-pill">Rainbow</span>
         </div>
-        <button @click="removeColor(index)" class="remove-button">×</button>
+        <div class="item-actions">
+          <button @click="toggleRainbow(index)" class="toggle-rainbow" title="Toggle rainbow">🌈</button>
+          <button @click="removeColor(index)" class="remove-button">×</button>
+        </div>
       </div>
     </div>
 
@@ -57,7 +65,7 @@ const props = defineProps<{
 
 const wsStore = useWebSocketStore()
 
-const newColor = ref({ r: 255, g: 255, b: 255, a: 255 })
+const newColor = ref({ r: 255, g: 255, b: 255, a: 255, rainbow: false })
 
 const colors = computed(() => props.setting.value.items || [])
 
@@ -90,7 +98,8 @@ function addColor() {
       r: Math.max(0, Math.min(255, newColor.value.r)),
       g: Math.max(0, Math.min(255, newColor.value.g)),
       b: Math.max(0, Math.min(255, newColor.value.b)),
-      a: Math.max(0, Math.min(255, newColor.value.a))
+      a: Math.max(0, Math.min(255, newColor.value.a)),
+      rainbow: Boolean(newColor.value.rainbow)
     }
   ]
   updateValue(updated)
@@ -101,7 +110,15 @@ function removeColor(index: number) {
   updateValue(updated)
 }
 
-function updateValue(items: Array<{ r: number; g: number; b: number; a: number }>) {
+function toggleRainbow(index: number) {
+  const updated = colors.value.map((color, i) => {
+    if (i !== index) return color
+    return { ...color, rainbow: !color.rainbow }
+  })
+  updateValue(updated)
+}
+
+function updateValue(items: Array<{ r: number; g: number; b: number; a: number; rainbow?: boolean }>) {
   wsStore.send({
     type: 'setting.update',
     data: {
@@ -170,6 +187,14 @@ function updateValue(items: Array<{ r: number; g: number; b: number; a: number }
   flex: 1;
 }
 
+.rainbow-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
 .rgba-input {
   padding: 0.5rem;
   background: var(--color-background-soft);
@@ -220,6 +245,12 @@ function updateValue(items: Array<{ r: number; g: number; b: number; a: number }
   border-radius: 4px;
 }
 
+.item-actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
 .color-swatch {
   width: 40px;
   height: 40px;
@@ -262,6 +293,22 @@ function updateValue(items: Array<{ r: number; g: number; b: number; a: number }
   border-radius: 50%;
   transition: all 0.2s;
   flex-shrink: 0;
+}
+
+.toggle-rainbow {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.rainbow-pill {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f97316, #facc15, #34d399, #38bdf8, #a855f7);
+  color: #0f172a;
+  width: fit-content;
 }
 
 .remove-button:hover {

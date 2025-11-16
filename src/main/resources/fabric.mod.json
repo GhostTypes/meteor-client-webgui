@@ -3,13 +3,13 @@
   "id": "meteor-webgui",
   "version": "${version}",
   "name": "Meteor WebGUI",
-  "description": "Web-based GUI for Meteor Client with bi-directional control and real-time synchronization",
+  "description": "Web-based GUI for Meteor Client",
   "authors": [
-    "Cope"
+    "GhostTypes"
   ],
   "contact": {
-    "homepage": "https://github.com/cope/meteor-webgui",
-    "sources": "https://github.com/cope/meteor-webgui"
+    "homepage": "https://github.com/GhostTypes/meteor-client-webgui",
+    "sources": "https://github.com/GhostTypes/meteor-client-webgui"
   },
   "icon": "assets/meteor-webgui/icon.png",
   "environment": "client",
@@ -24,7 +24,7 @@
   },
   "depends": {
     "java": ">=21",
-    "minecraft": ">=1.21.8",
+    "minecraft": ">=1.21.10",
     "meteor-client": ">=0.5.0"
   }
 }

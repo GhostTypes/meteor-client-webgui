@@ -1,5 +1,5 @@
 <template>
-  <section class="module-toolbar">
+<section class="module-toolbar">
     <div class="category-row" v-if="categories.length">
       <button
         v-for="category in categories"
@@ -40,12 +40,14 @@
 
       <div class="density-toggle" role="group" aria-label="Card density">
         <button
+          class="btn"
           :class="{ active: density === 'comfortable' }"
           @click="emit('update:density', 'comfortable')"
         >
           Comfortable
         </button>
         <button
+          class="btn"
           :class="{ active: density === 'compact' }"
           @click="emit('update:density', 'compact')"
         >
@@ -76,8 +78,8 @@ const emit = defineEmits<{
 
 <style scoped>
 .module-toolbar {
-  background: rgba(16, 20, 26, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--color-surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
   padding: 1rem 1.5rem;
   display: flex;
@@ -130,9 +132,10 @@ const emit = defineEmits<{
   gap: 0.5rem;
   color: var(--color-text-muted);
   font-size: 0.9rem;
-  padding: 0.35rem 0.8rem 0.35rem 0.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
 }
 
 .toggle-active.disabled {
@@ -146,25 +149,20 @@ const emit = defineEmits<{
 
 .density-toggle {
   display: inline-flex;
-  padding: 0.25rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
-.density-toggle button {
-  background: transparent;
-  border-radius: 999px;
-  padding: 0.35rem 0.9rem;
-  font-size: 0.85rem;
+.density-toggle .btn {
+  min-width: 120px;
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
   color: var(--color-text-muted);
 }
 
-.density-toggle button.active {
-  background: rgba(75, 166, 255, 0.15);
+.density-toggle .btn.active {
+  background: rgba(75, 166, 255, 0.2);
   color: var(--color-text);
-  box-shadow: 0 5px 18px rgba(75, 166, 255, 0.2);
+  border-color: rgba(75, 166, 255, 0.4);
 }
 
 @media (max-width: 768px) {

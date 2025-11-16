@@ -56,7 +56,7 @@ cd C:\Users\Cope\Documents\GitHub\meteor-client-webgui
 
 ### Step 2: Install Mod
 - [ ] Copy JAR to `.minecraft/mods/`
-- [ ] Copy `libs/meteor-client-1.21.8-56.jar` to `.minecraft/mods/`
+- [ ] Copy `libs/meteor-client-1.21.10-32.jar` to `.minecraft/mods/`
 - [ ] Fabric Loader installed
 
 ### Step 3: Launch Minecraft

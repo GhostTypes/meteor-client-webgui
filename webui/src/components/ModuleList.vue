@@ -13,9 +13,10 @@
       class="modules"
       :class="[`density-${density}`]"
     >
-      <ModuleCard
+      <component
         v-for="module in modules"
         :key="module.name"
+        :is="density === 'compact' ? ModuleCardCompact : ModuleCard"
         :module="module"
         @open-settings="emit('open-settings', $event)"
       />
@@ -30,6 +31,7 @@
 <script setup lang="ts">
 import type { ModuleInfo } from '../stores/modules'
 import ModuleCard from './ModuleCard.vue'
+import ModuleCardCompact from './ModuleCardCompact.vue'
 
 defineProps<{
   category: string
@@ -73,11 +75,11 @@ const emit = defineEmits<{
 .modules {
   display: grid;
   gap: 1.25rem;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
 .modules.density-compact {
-  gap: 0.9rem;
+  gap: 0.75rem;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 

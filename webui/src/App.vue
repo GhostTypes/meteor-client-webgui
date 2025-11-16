@@ -12,7 +12,7 @@
         <span class="status-text">
           {{ wsStore.connected ? 'Connected' : wsStore.reconnecting ? 'Reconnecting…' : 'Disconnected' }}
         </span>
-        <button v-if="!wsStore.connected" class="btn-primary retry-button" @click="wsStore.connect()">
+        <button v-if="!wsStore.connected" class="btn btn-primary retry-button" @click="wsStore.connect()">
           Retry
         </button>
       </div>
@@ -24,7 +24,7 @@
 
     <div v-else-if="wsStore.error" class="state-view error">
       <p>Error: {{ wsStore.error }}</p>
-      <button class="btn-primary" @click="wsStore.connect()">Retry Connection</button>
+      <button class="btn btn-primary" @click="wsStore.connect()">Retry Connection</button>
     </div>
 
     <main v-else class="main">

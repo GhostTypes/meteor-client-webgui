@@ -182,9 +182,9 @@ webui/src/
 ## Dependencies
 
 ### Java (build.gradle.kts)
-- **Minecraft**: 1.21.8
-- **Fabric Loader**: 0.16.14
-- **Meteor Client**: 1.21.8-56 (local JAR in `libs/`)
+- **Minecraft**: 1.21.10
+- **Fabric Loader**: 0.17.3
+- **Meteor Client**: 1.21.10-32 (local JAR in `libs/`)
 - **Java-WebSocket**: 1.5.7 (for WebSocket server)
 - **Gson**: 2.11.0 (for JSON serialization)
 
@@ -266,7 +266,7 @@ See `ai_docs/ARCHITECTURE.md` Phase 3-5 for planned features.
 ## Troubleshooting Tips
 
 ### "Cannot find Meteor classes" compilation error
-- Ensure `libs/meteor-client-1.21.8-56.jar` exists
+- Ensure `libs/meteor-client-1.21.10-32.jar` exists
 - Run `./gradlew clean build`
 
 ### WebSocket connection fails

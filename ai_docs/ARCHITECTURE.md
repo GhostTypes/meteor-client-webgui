@@ -10,9 +10,9 @@ A web-based GUI addon for Meteor Client featuring:
 ## Technology Stack
 
 ### Backend (Java Addon)
-- **Minecraft Version**: 1.21.8
-- **Fabric Loader**: 0.16.14
-- **Meteor Client**: 1.21.8-56
+- **Minecraft Version**: 1.21.10
+- **Fabric Loader**: 0.17.3
+- **Meteor Client**: 1.21.10-32
 - **WebSocket Library**: Java-WebSocket 1.5.7
 - **JSON Library**: Gson 2.11.0
 

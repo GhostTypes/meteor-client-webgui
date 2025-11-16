@@ -3,9 +3,9 @@
 ## Prerequisites
 - Java 21+
 - Node.js 18+ (for WebUI development)
-- Minecraft 1.21.8
-- Fabric Loader 0.16.14+
-- Meteor Client 1.21.8-56
+- Minecraft 1.21.10
+- Fabric Loader 0.17.3+
+- Meteor Client 1.21.10-32
 
 ## Step 1: Build the Addon (if not already built)
 
@@ -19,7 +19,7 @@ The JAR will be at: `build/libs/meteor-webgui-0.1.0.jar`
 ## Step 2: Install to Minecraft
 
 1. Copy `build/libs/meteor-webgui-0.1.0.jar` to `.minecraft/mods/`
-2. Copy `libs/meteor-client-1.21.8-56.jar` to `.minecraft/mods/` (if not already there)
+2. Copy `libs/meteor-client-1.21.10-32.jar` to `.minecraft/mods/` (if not already there)
 3. Ensure Fabric Loader is installed
 
 ## Step 3: Launch Minecraft

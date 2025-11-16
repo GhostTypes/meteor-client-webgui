@@ -2,7 +2,6 @@
   <div class="setting-item">
     <div class="setting-header">
       <span class="setting-title">{{ setting.title }}</span>
-      <div class="color-preview" :style="{ backgroundColor: rgbaString }"></div>
     </div>
     <p class="setting-description">{{ setting.description }}</p>
 
@@ -82,6 +81,11 @@
           />
         </div>
       </div>
+
+      <label class="rainbow-toggle">
+        <input type="checkbox" :checked="Boolean(setting.value.rainbow)" @change="toggleRainbow" />
+        Rainbow
+      </label>
     </div>
   </div>
 </template>
@@ -106,12 +110,13 @@ const hexColor = computed(() => {
   return `#${r}${g}${b}`
 })
 
-// RGBA string for preview with alpha
-const rgbaString = computed(() => {
-  return `rgba(${props.setting.value.r}, ${props.setting.value.g}, ${props.setting.value.b}, ${props.setting.value.a / 255})`
-})
-
-function updateValue(r: number, g: number, b: number, a: number) {
+function updateValue(
+  r: number,
+  g: number,
+  b: number,
+  a: number,
+  rainbow = Boolean(props.setting.value.rainbow)
+) {
   // Clamp values to 0-255
   r = Math.max(0, Math.min(255, Math.floor(r)))
   g = Math.max(0, Math.min(255, Math.floor(g)))
@@ -123,7 +128,7 @@ function updateValue(r: number, g: number, b: number, a: number) {
     data: {
       moduleName: props.module.name,
       settingName: props.setting.name,
-      value: { r, g, b, a }
+      value: { r, g, b, a, rainbow }
     }
   })
 }
@@ -173,6 +178,17 @@ function updateB(event: Event) {
     props.setting.value.g,
     b,
     props.setting.value.a
+  )
+}
+
+function toggleRainbow(event: Event) {
+  const rainbow = (event.target as HTMLInputElement).checked
+  updateValue(
+    props.setting.value.r,
+    props.setting.value.g,
+    props.setting.value.b,
+    props.setting.value.a,
+    rainbow
   )
 }
 </script>
@@ -311,11 +327,11 @@ function updateB(event: Event) {
   opacity: 1;
 }
 
-.color-preview {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  border: 2px solid var(--color-border);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+.rainbow-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
 }
 </style>

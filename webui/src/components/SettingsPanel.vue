@@ -33,6 +33,10 @@ import DoubleSetting from './settings/DoubleSetting.vue'
 import StringSetting from './settings/StringSetting.vue'
 import EnumSetting from './settings/EnumSetting.vue'
 import GenericSetting from './settings/GenericSetting.vue'
+import KeybindSetting from './settings/KeybindSetting.vue'
+import RegistryValueSetting from './settings/RegistryValueSetting.vue'
+import FontFaceSetting from './settings/FontFaceSetting.vue'
+import PotionSetting from './settings/PotionSetting.vue'
 
 // Phase 3: Advanced Settings
 import ColorSetting from './settings/ColorSetting.vue'
@@ -60,6 +64,11 @@ function getSettingComponent(type: string) {
     case 'STRING':
     case 'PROVIDED_STRING': return StringSetting
     case 'ENUM': return EnumSetting
+    case 'KEYBIND': return KeybindSetting
+    case 'BLOCK':
+    case 'ITEM': return RegistryValueSetting
+    case 'POTION': return PotionSetting
+    case 'FONT_FACE': return FontFaceSetting
 
     // Phase 3: Advanced types
     case 'COLOR': return ColorSetting
@@ -104,11 +113,13 @@ function getSettingComponent(type: string) {
   font-size: 0.75rem;
   letter-spacing: 0.3em;
   color: var(--color-text-muted);
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
   position: sticky;
   top: 0;
-  background: rgba(9, 12, 18, 0.95);
-  padding: 0.15rem 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(9, 12, 18, 0.98), rgba(9, 12, 18, 0.85));
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .setting-item {

@@ -237,6 +237,10 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
                     response.add("statusEffects", RegistryProvider.getAllStatusEffects());
                     LOG.info("Sent statusEffects registry to client");
                 }
+                case "potions" -> {
+                    response.add("potions", RegistryProvider.getAllPotions());
+                    LOG.info("Sent potions registry to client");
+                }
                 case "modules" -> {
                     response.add("modules", RegistryProvider.getAllModules());
                     LOG.info("Sent modules registry to client");

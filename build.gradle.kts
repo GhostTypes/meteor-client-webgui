@@ -1,5 +1,5 @@
 plugins {
-    id("fabric-loom") version "1.11-SNAPSHOT"
+    id("fabric-loom") version "1.12-SNAPSHOT"
 }
 
 base {
@@ -31,6 +31,9 @@ dependencies {
 
     // Meteor - using local JAR for consistent version
     modImplementation(files("libs/meteor-client-${properties["meteor_version"] as String}.jar"))
+
+    // Compile-time access to Orbit event bus (provided by Meteor at runtime)
+    compileOnly("meteordevelopment:orbit:0.2.4")
 
     // NanoHTTPD for HTTP server and WebSocket support
     modImplementation("org.nanohttpd:nanohttpd:2.3.1")!!.let { include(it) }

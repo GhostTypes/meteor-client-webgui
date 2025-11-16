@@ -5,9 +5,9 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Preview-purple?style=for-the-badge">
-  <img src="https://img.shields.io/badge/Minecraft-1.21.8-0ea5e9?style=for-the-badge">
-  <img src="https://img.shields.io/badge/Fabric%20Loader-0.16.14+-f59e0b?style=for-the-badge">
-  <img src="https://img.shields.io/badge/Meteor%20Client-1.21.8--56-ec4899?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Minecraft-1.21.10-0ea5e9?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Fabric%20Loader-0.17.3+-f59e0b?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Meteor%20Client-1.21.10--32-ec4899?style=for-the-badge">
 </p>
 
 
@@ -56,8 +56,8 @@
 ### 1. Requirements
 - Java 21+
 - Node.js 18+ (only for web UI development)
-- Minecraft 1.21.8 with Fabric Loader 0.16.14+
-- Meteor Client 1.21.8-56
+- Minecraft 1.21.10 with Fabric Loader 0.17.3+
+- Meteor Client 1.21.10-32
 
 ### 2. Build the addon (bundles the WebUI)
 
@@ -69,7 +69,7 @@ The jar is created at `build/libs/meteor-webgui-0.1.0.jar`. This task also runs 
 
 ### 3. Install into Minecraft
 1. Copy `build/libs/meteor-webgui-0.1.0.jar` to `.minecraft/mods/`.
-2. Copy `libs/meteor-client-1.21.8-56.jar` beside it (ensure Fabric Loader is installed).
+2. Copy `libs/meteor-client-1.21.10-32.jar` beside it (ensure Fabric Loader is installed).
 3. Launch Minecraft with your Fabric profile.
 
 ### 4. Start the WebGUI server in-game
@@ -112,4 +112,3 @@ The jar is created at `build/libs/meteor-webgui-0.1.0.jar`. This task also runs 
 - `npm run dev` – Hot-reload development server on port 3000 (with `/ws` proxying).
 - `npm run build` – Generates the static bundle consumed by Gradle.
 - `npm run preview` – Serve the production bundle locally for smoke tests.
-

@@ -28,14 +28,14 @@
                 </svg>
               </button>
               <button
-                class="toggle-button"
+                class="btn"
                 :class="{ active: module.active }"
                 @click="toggleModule"
                 :disabled="toggling"
               >
                 {{ module.active ? 'Disable module' : 'Enable module' }}
               </button>
-              <button class="ghost-button" @click="emit('close')">Close</button>
+              <button class="btn btn-ghost" @click="emit('close')">Close</button>
             </div>
           </header>
 
@@ -158,10 +158,10 @@ onBeforeUnmount(() => {
 .module-dialog {
   width: min(1200px, 100%);
   max-height: 90vh;
-  background: rgba(9, 12, 18, 0.95);
+  background: var(--color-surface-1);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  box-shadow: 0 40px 120px rgba(5, 7, 12, 0.5);
+  border-radius: var(--radius-md);
+  box-shadow: 0 40px 120px rgba(5, 7, 12, 0.45);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -173,6 +173,10 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: space-between;
   gap: 1.25rem;
+  position: sticky;
+  top: 0;
+  background: linear-gradient(180deg, rgba(9, 12, 18, 0.98), rgba(9, 12, 18, 0.9));
+  z-index: 2;
 }
 
 .dialog-header h2 {
@@ -197,6 +201,7 @@ onBeforeUnmount(() => {
   grid-template-columns: 280px 1fr;
   min-height: 0;
   flex: 1;
+  background: var(--color-surface-1);
 }
 
 .module-summary {
@@ -205,13 +210,14 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  background: var(--color-surface-2);
 }
 
 .summary-block {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--color-surface-1);
   padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .summary-label {
@@ -229,46 +235,34 @@ onBeforeUnmount(() => {
 .settings-scroll {
   padding: 1.5rem;
   overflow-y: auto;
+  background: var(--color-surface-1);
 }
 
-.toggle-button {
-  border-radius: 999px;
-  padding-inline: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
-}
 
-.toggle-button.active {
-  background: rgba(74, 222, 128, 0.18);
-  border-color: rgba(74, 222, 128, 0.45);
-}
-
-.favorite-button {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
+.dialog-actions .favorite-button {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-surface-2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.favorite-button svg {
+.dialog-actions .favorite-button svg {
   width: 18px;
   height: 18px;
-  fill: rgba(255, 255, 255, 0.45);
+  fill: rgba(255, 255, 255, 0.55);
 }
 
-.favorite-button.active svg {
+.dialog-actions .favorite-button.active svg {
   fill: #ffc857;
 }
 
-.ghost-button {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 999px;
-  padding-inline: 1.5rem;
+.module-dialog .btn.active {
+  background: rgba(74, 222, 128, 0.18);
+  border-color: rgba(74, 222, 128, 0.45);
 }
 
 @media (max-width: 960px) {

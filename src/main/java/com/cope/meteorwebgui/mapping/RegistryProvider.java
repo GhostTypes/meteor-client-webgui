@@ -4,13 +4,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import net.minecraft.block.Block;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
+import net.minecraft.potion.Potion;
 import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Identifier;
 
 import java.util.HashMap;
@@ -77,6 +75,23 @@ public class RegistryProvider {
         result.add("items", items);
         result.add("byNamespace", toJsonObject(byNamespace));
         return result;
+    }
+
+    /**
+     * Get all potions with namespace metadata
+     */
+    public static JsonArray getAllPotions() {
+        JsonArray potions = new JsonArray();
+
+        Registries.POTION.getEntrySet().forEach(entry -> {
+            Identifier id = entry.getKey().getValue();
+            JsonObject potionObj = new JsonObject();
+            potionObj.addProperty("id", id.toString());
+            potionObj.addProperty("namespace", id.getNamespace());
+            potions.add(potionObj);
+        });
+
+        return potions;
     }
 
     /**
@@ -157,6 +172,7 @@ public class RegistryProvider {
         registries.add("items", getAllItems());
         registries.add("entities", getAllEntityTypes());
         registries.add("statusEffects", getAllStatusEffects());
+        registries.add("potions", getAllPotions());
         registries.add("modules", getAllModules());
         return registries;
     }

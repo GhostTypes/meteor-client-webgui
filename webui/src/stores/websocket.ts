@@ -25,6 +25,7 @@ export interface RegistryData {
   modules: {
     byCategory: Record<string, Array<{ name: string; title: string; category: string }>>
   }
+  potions?: Array<{ id: string; namespace: string }>
 }
 
 export const useWebSocketStore = defineStore('websocket', () => {
@@ -138,6 +139,8 @@ export const useWebSocketStore = defineStore('websocket', () => {
           registries.value.entities = message.data.entities
         } else if (regType === 'statusEffects') {
           registries.value.statusEffects = message.data.statusEffects
+        } else if (regType === 'potions') {
+          registries.value.potions = message.data.potions
         } else if (regType === 'modules') {
           registries.value.modules = message.data.modules
         }
