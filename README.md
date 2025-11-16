@@ -1,7 +1,9 @@
 <div align="center">
   <h1>Meteor WebGUI</h1>
+  <img width="256" height="256" alt="icon" src="https://github.com/user-attachments/assets/273769c8-c51d-4294-9b2b-cddbac3e91ba" />
   <p>Real-time, bi-directional web interface for every Meteor Client module and setting.</p>
 </div>
+
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Preview-purple?style=for-the-badge">
