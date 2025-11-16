@@ -35,7 +35,7 @@
   </tr>
   <tr>
     <td>Type-aware settings</td>
-    <td>UI components adapt to Bool, Int, Double, String, and Enum settings with validation and dual input methods.</td>
+    <td>UI components adapt to 30+ setting types including Bool, Int, Double, String, Enum, Color, Keybind, Font, Potion, List types (blocks, items, entities), and Map types with full validation and type-specific controls.</td>
   </tr>
   <tr>
     <td>Registry streaming</td>
