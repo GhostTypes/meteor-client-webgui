@@ -18,7 +18,9 @@
       "com.cope.meteorwebgui.MeteorWebGUIAddon"
     ]
   },
-  "mixins": [],
+  "mixins": [
+    "meteor-webgui.mixins.json"
+  ],
   "custom": {
     "meteor-client:color": "75,200,255"
   },

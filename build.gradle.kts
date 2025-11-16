@@ -115,6 +115,10 @@ tasks {
         description = "Copy built WebUI files to resources"
         dependsOn("buildWebUI")
 
+        doFirst {
+            project.delete("src/main/resources/webui")
+        }
+
         from("webui/dist")
         into("src/main/resources/webui")
     }

@@ -1,9 +1,13 @@
 package com.cope.meteorwebgui.events;
 
+import com.cope.meteorwebgui.mapping.HudMapper;
 import com.cope.meteorwebgui.server.MeteorWebServer;
 import meteordevelopment.meteorclient.events.meteor.ActiveModulesChangedEvent;
+import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.systems.hud.Hud;
+import meteordevelopment.meteorclient.systems.hud.HudElement;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.orbit.EventHandler;
@@ -23,6 +27,7 @@ public class EventMonitor {
     private final MeteorWebServer server;
     private final Map<Setting<?>, Consumer<?>> originalCallbacks = new HashMap<>();
     private final Map<String, Boolean> moduleStates = new HashMap<>();
+    private final Map<String, Boolean> hudStates = new HashMap<>();
 
     public EventMonitor(MeteorWebServer server) {
         this.server = server;
@@ -39,6 +44,8 @@ public class EventMonitor {
             moduleStates.put(module.name, module.isActive());
             monitorModuleSettings(module);
         }
+
+        monitorHudElements();
 
         LOG.info("Event monitoring started for {} modules", Modules.get().getCount());
     }
@@ -67,6 +74,23 @@ public class EventMonitor {
         }
     }
 
+    @EventHandler
+    private void onHudRender(Render2DEvent event) {
+        for (HudElement element : Hud.get()) {
+            String id = HudMapper.getElementIdentifier(element);
+            boolean currentState = element.isActive();
+            Boolean previousState = hudStates.get(id);
+
+            if (previousState == null || previousState != currentState) {
+                hudStates.put(id, currentState);
+                if (server.isRunning()) {
+                    server.broadcastHudStateChange(element);
+                    LOG.debug("HUD state changed: {} -> {}", id, currentState);
+                }
+            }
+        }
+    }
+
     /**
      * Wrap setting callbacks
      */
@@ -74,6 +98,22 @@ public class EventMonitor {
         for (SettingGroup group : module.settings) {
             for (Setting<?> setting : group) {
                 wrapSettingCallback(module, setting);
+            }
+        }
+    }
+
+    private void monitorHudElements() {
+        for (HudElement element : Hud.get()) {
+            String id = HudMapper.getElementIdentifier(element);
+            hudStates.put(id, element.isActive());
+            monitorHudSettings(element);
+        }
+    }
+
+    private void monitorHudSettings(HudElement element) {
+        for (SettingGroup group : element.settings) {
+            for (Setting<?> setting : group) {
+                wrapHudSettingCallback(element, setting);
             }
         }
     }
@@ -121,6 +161,40 @@ public class EventMonitor {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> void wrapHudSettingCallback(HudElement element, Setting<T> setting) {
+        try {
+            var onChangedField = Setting.class.getDeclaredField("onChanged");
+            onChangedField.setAccessible(true);
+            Consumer<T> originalCallback = (Consumer<T>) onChangedField.get(setting);
+
+            if (originalCallback != null) {
+                originalCallbacks.put(setting, originalCallback);
+            }
+
+            Consumer<T> wrappedCallback = value -> {
+                if (originalCallback != null) {
+                    try {
+                        originalCallback.accept(value);
+                    } catch (Exception e) {
+                        LOG.error("Error in original HUD callback for {}.{}: {}",
+                            element.info != null ? element.info.name : element.getClass().getSimpleName(), setting.name, e.getMessage());
+                    }
+                }
+
+                if (server.isRunning()) {
+                    server.broadcastHudSettingChange(element, setting);
+                }
+            };
+
+            onChangedField.set(setting, wrappedCallback);
+
+        } catch (Exception e) {
+            LOG.error("Failed to wrap callback for HUD setting {}.{}: {}",
+                element.info != null ? element.info.name : element.getClass().getSimpleName(), setting.name, e.getMessage());
+        }
+    }
+
     /**
      * Stop monitoring (cleanup)
      */
@@ -128,5 +202,6 @@ public class EventMonitor {
         LOG.info("Stopping event monitoring");
         // Could restore original callbacks here if needed
         originalCallbacks.clear();
+        hudStates.clear();
     }
 }

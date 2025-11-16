@@ -15,27 +15,22 @@
           @click.stop="toggleFavorite"
           :title="isFavorite ? 'Remove from favorites' : 'Add to favorites'"
         >
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            <path
-              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.802 2.036a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.539 1.118l-2.802-2.036a1 1 0 0 0-1.176 0l-2.802 2.036c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 0 0 .95-.69l1.07-3.292Z"
-            />
-          </svg>
+          <span class="sr-only">Toggle favorite</span>
         </button>
 
         <div class="module-title">
-          <p class="module-name">{{ module.name }}</p>
           <h3>{{ module.title }}</h3>
+        </div>
+
+        <div class="header-badges">
+          <span class="chip chip-small">{{ module.addon }}</span>
+          <span class="chip chip-small muted">{{ module.settingGroups?.length || 0 }}</span>
         </div>
       </header>
 
       <p class="description">
         {{ module.description }}
       </p>
-
-      <div class="module-meta">
-        <span class="chip">{{ module.addon }}</span>
-        <span class="chip muted">{{ module.settingGroups?.length || 0 }} setting groups</span>
-      </div>
 
       <footer class="card-footer">
         <button class="btn btn-ghost" @click.stop="emit('open-settings', module)">
@@ -129,50 +124,42 @@ function toggleFavorite() {
 }
 
 .module-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  gap: 0.75rem;
 }
 
 .favorite-button {
-  position: absolute;
-  left: 0;
-  width: 36px;
+  min-width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: var(--color-surface-2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition-base), border-color var(--transition-base);
 }
 
-.favorite-button svg {
-  width: 20px;
-  height: 20px;
-  fill: rgba(255, 255, 255, 0.45);
-}
-
-.favorite-button.active svg {
-  fill: #ffc857;
+.favorite-button.active {
+  background: #ffd85e;
+  border-color: #ffd85e;
+  box-shadow: 0 0 12px rgba(255, 216, 94, 0.35);
 }
 
 .module-title {
   text-align: center;
 }
 
-.module-name {
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  margin: 0 0 0.25rem;
-}
-
 .module-title h3 {
   margin: 0;
   font-size: 1.2rem;
+}
+
+.header-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-end;
 }
 
 .description {
@@ -181,13 +168,6 @@ function toggleFavorite() {
   margin: 0;
   text-align: center;
   min-height: 48px;
-}
-
-.module-meta {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
 }
 
 .chip.muted {

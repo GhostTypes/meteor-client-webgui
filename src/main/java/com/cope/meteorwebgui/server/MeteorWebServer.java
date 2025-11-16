@@ -1,5 +1,6 @@
 package com.cope.meteorwebgui.server;
 
+import com.cope.meteorwebgui.mapping.HudMapper;
 import com.cope.meteorwebgui.mapping.ModuleMapper;
 import com.cope.meteorwebgui.protocol.MessageType;
 import com.cope.meteorwebgui.protocol.WSMessage;
@@ -7,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import fi.iki.elonen.NanoHTTPD;
 import meteordevelopment.meteorclient.settings.Setting;
+import meteordevelopment.meteorclient.systems.hud.HudElement;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,6 +106,39 @@ public class MeteorWebServer {
             LOG.debug("Broadcast setting change: {}.{}", module.name, setting.name);
         } catch (Exception e) {
             LOG.error("Failed to broadcast setting change: {}", e.getMessage(), e);
+        }
+    }
+
+    public void broadcastHudStateChange(HudElement element) {
+        if (!running) return;
+        try {
+            JsonObject data = HudMapper.createHudStateMessage(element);
+            WSMessage message = new WSMessage(MessageType.HUD_STATE_CHANGED, data);
+            webSocketHandler.broadcast(GSON.toJson(message));
+            LOG.debug("Broadcast HUD state: {} -> {}", data.get("elementName").getAsString(), element.isActive());
+        } catch (Exception e) {
+            LOG.error("Failed to broadcast HUD state change: {}", e.getMessage(), e);
+        }
+    }
+
+    public void broadcastHudSettingChange(HudElement element, Setting<?> setting) {
+        if (!running) return;
+        try {
+            JsonObject data = HudMapper.createHudSettingChangeMessage(element, setting);
+            WSMessage message = new WSMessage(MessageType.HUD_SETTING_VALUE_CHANGED, data);
+            webSocketHandler.broadcast(GSON.toJson(message));
+            LOG.debug("Broadcast HUD setting change: {}.{}", data.get("elementName").getAsString(), setting.name);
+        } catch (Exception e) {
+            LOG.error("Failed to broadcast HUD setting change: {}", e.getMessage(), e);
+        }
+    }
+
+    public void broadcast(String jsonPayload) {
+        if (!running || webSocketHandler == null) return;
+        try {
+            webSocketHandler.broadcast(jsonPayload);
+        } catch (Exception e) {
+            LOG.error("Failed to broadcast custom payload: {}", e.getMessage(), e);
         }
     }
 

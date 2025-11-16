@@ -11,20 +11,19 @@
       <div class="compact-header">
         <div class="name-block">
           <h4>{{ module.title }}</h4>
-          <span class="chip">{{ module.addon }}</span>
+          <div class="compact-badges">
+            <span class="chip chip-small">{{ module.addon }}</span>
+            <span class="chip chip-small muted">{{ module.settingGroups?.length || 0 }}</span>
+          </div>
         </div>
         <button
-        class="favorite-button"
-        :class="{ active: isFavorite }"
-        @click.stop="toggleFavorite"
-        :title="isFavorite ? 'Remove from favorites' : 'Add to favorites'"
-      >
-        <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path
-            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.802 2.036a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.539 1.118l-2.802-2.036a1 1 0 0 0-1.176 0l-2.802 2.036c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 0 0 .95-.69l1.07-3.292Z"
-          />
-        </svg>
-      </button>
+          class="favorite-button"
+          :class="{ active: isFavorite }"
+          @click.stop="toggleFavorite"
+          :title="isFavorite ? 'Remove from favorites' : 'Add to favorites'"
+        >
+          <span class="sr-only">Toggle favorite</span>
+        </button>
       </div>
 
       <div class="compact-body">
@@ -96,11 +95,18 @@ function handleCardToggle() {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  flex: 1;
 }
 
 .name-block h4 {
   margin: 0;
   font-size: 1rem;
+}
+
+.compact-badges {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .compact-body {
@@ -109,28 +115,19 @@ function handleCardToggle() {
 }
 
 .favorite-button {
-  width: 32px;
+  min-width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: var(--color-surface-2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition-base), border-color var(--transition-base);
 }
 
-.favorite-button svg {
-  width: 20px;
-  height: 20px;
-  fill: rgba(255, 255, 255, 0.45);
-}
-
-.favorite-button.active svg {
-  fill: #ffc857;
-}
-
-.chip {
-  align-self: flex-start;
+.favorite-button.active {
+  background: #ffd85e;
+  border-color: #ffd85e;
+  box-shadow: 0 0 10px rgba(255, 216, 94, 0.35);
 }
 
 .module-card-compact:focus-visible {

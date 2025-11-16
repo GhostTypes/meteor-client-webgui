@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useModulesStore } from './modules'
+import { useHudStore } from './hud'
 
 export interface WSMessage {
   type: string
@@ -36,6 +37,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
   const registries = ref<RegistryData | null>(null)
 
   const modulesStore = useModulesStore()
+  const hudStore = useHudStore()
 
   function connect() {
     if (ws.value && ws.value.readyState === WebSocket.OPEN) {
@@ -100,6 +102,9 @@ export const useWebSocketStore = defineStore('websocket', () => {
     switch (message.type) {
       case 'initial.state':
         modulesStore.setInitialState(message.data.modules)
+        if (message.data.hud) {
+          hudStore.setInitialState(message.data.hud)
+        }
         // Store registry data
         if (message.data.registries) {
           registries.value = message.data.registries
@@ -144,6 +149,18 @@ export const useWebSocketStore = defineStore('websocket', () => {
         } else if (regType === 'modules') {
           registries.value.modules = message.data.modules
         }
+        break
+
+      case 'hud.preview.update':
+        hudStore.applyPreviewUpdate(message.data.elements)
+        break
+
+      case 'hud.state.changed':
+        hudStore.applyStateChange(message.data)
+        break
+
+      case 'hud.setting.value.changed':
+        hudStore.updateSettingValue(message.data.elementName, message.data.settingName, message.data.value)
         break
 
       case 'error':

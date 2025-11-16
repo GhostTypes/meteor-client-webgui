@@ -6,6 +6,9 @@ public enum MessageType {
     MODULE_STATE_CHANGED("module.state.changed"),
     SETTING_VALUE_CHANGED("setting.value.changed"),
     REGISTRY_DATA("registry.data"),
+    HUD_PREVIEW_UPDATE("hud.preview.update"),
+    HUD_STATE_CHANGED("hud.state.changed"),
+    HUD_SETTING_VALUE_CHANGED("hud.setting.value.changed"),
     ERROR("error"),
 
     // Client -> Server
@@ -14,6 +17,7 @@ public enum MessageType {
     SETTING_UPDATE("setting.update"),
     SETTING_GET("setting.get"),
     REGISTRY_REQUEST("registry.request"),
+    HUD_TOGGLE("hud.toggle"),
     PING("ping"),
     PONG("pong");
 

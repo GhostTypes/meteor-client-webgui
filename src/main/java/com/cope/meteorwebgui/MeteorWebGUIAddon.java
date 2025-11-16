@@ -2,6 +2,7 @@ package com.cope.meteorwebgui;
 
 import com.cope.meteorwebgui.events.EventMonitor;
 import com.cope.meteorwebgui.gui.WebGUITab;
+import com.cope.meteorwebgui.hud.HudPreviewService;
 import com.cope.meteorwebgui.server.MeteorWebServer;
 import com.cope.meteorwebgui.systems.WebGUIConfig;
 import meteordevelopment.meteorclient.MeteorClient;
@@ -25,6 +26,7 @@ public class MeteorWebGUIAddon extends MeteorAddon {
 
     private static MeteorWebServer server;
     private static EventMonitor eventMonitor;
+    private static HudPreviewService hudPreviewService;
 
     @Override
     public void onInitialize() {
@@ -85,6 +87,9 @@ public class MeteorWebGUIAddon extends MeteorAddon {
             MeteorClient.EVENT_BUS.subscribe(eventMonitor);
             eventMonitor.startMonitoring();
 
+            hudPreviewService = new HudPreviewService(server);
+            hudPreviewService.start();
+
             LOG.info("WebGUI server started successfully");
             LOG.info("Access the WebGUI at: http://{}:{}", host, port);
 
@@ -110,6 +115,11 @@ public class MeteorWebGUIAddon extends MeteorAddon {
                 MeteorClient.EVENT_BUS.unsubscribe(eventMonitor);
                 eventMonitor.stopMonitoring();
                 eventMonitor = null;
+            }
+
+            if (hudPreviewService != null) {
+                hudPreviewService.stop();
+                hudPreviewService = null;
             }
 
             // Stop server

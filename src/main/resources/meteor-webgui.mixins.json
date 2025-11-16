@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "com.cope.meteorwebgui.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "HudRendererMixin",
+    "HudMixin"
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

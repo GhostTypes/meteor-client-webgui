@@ -40,12 +40,22 @@
 
         <div class="module-content">
           <ModuleList
-            v-if="selectedCategory"
+            v-if="selectedCategory && !isHudSelected"
             :category="selectedCategory"
             :modules="filteredModules"
             :density="cardDensity"
             :empty-message="isFavoritesSelected ? favoritesEmptyMessage : undefined"
             @open-settings="openSettings"
+          />
+
+          <HudDashboard
+            v-else-if="isHudSelected"
+            :elements="filteredHudElements"
+            :loading="hudStore.loading"
+            :hide-non-text="hideDecoratedHud"
+            :density="cardDensity"
+            @open-settings="openHudSettings"
+            @update:hide-non-text="value => (hideDecoratedHud.value = value)"
           />
 
           <div v-else class="empty-state">
@@ -60,6 +70,11 @@
       :module="activeModule"
       @close="closeSettings"
     />
+    <HudSettingsDialog
+      :open="Boolean(activeHudElement)"
+      :element="activeHudElement"
+      @close="closeHudSettings"
+    />
   </div>
 </template>
 
@@ -67,31 +82,39 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useWebSocketStore } from './stores/websocket'
 import { useModulesStore, type ModuleInfo } from './stores/modules'
+import { useHudStore, type HudElementState } from './stores/hud'
 import ModuleList from './components/ModuleList.vue'
 import ModuleToolbar from './components/ModuleToolbar.vue'
 import ModuleSettingsDialog from './components/ModuleSettingsDialog.vue'
+import HudDashboard from './components/hud/HudDashboard.vue'
+import HudSettingsDialog from './components/hud/HudSettingsDialog.vue'
 
 type CardDensity = 'comfortable' | 'compact'
 const FAVORITES_CATEGORY = 'Favorites'
+const HUD_CATEGORY = 'HUD'
 
 const wsStore = useWebSocketStore()
 const modulesStore = useModulesStore()
+const hudStore = useHudStore()
 
 const selectedCategory = ref<string | null>(null)
 const searchQuery = ref('')
 const showActiveOnly = ref(false)
 const cardDensity = ref<CardDensity>('comfortable')
 const activeModule = ref<ModuleInfo | null>(null)
+const activeHudElement = ref<HudElementState | null>(null)
+const hideDecoratedHud = ref(false)
 const favoritesEmptyMessage = 'No favorites yet. Tap the star icon on a module to save it here.'
 const isFavoritesSelected = computed(() => selectedCategory.value === FAVORITES_CATEGORY)
+const isHudSelected = computed(() => selectedCategory.value === HUD_CATEGORY)
 const toolbarCategories = computed(() => {
   const list = modulesStore.categories as unknown as string[]
-  return [...list, FAVORITES_CATEGORY]
+  return [...list, FAVORITES_CATEGORY, HUD_CATEGORY]
 })
 const favoritesEmpty = computed(() => modulesStore.favoriteModules.length === 0)
 
 const filteredModules = computed(() => {
-  if (!selectedCategory.value) return []
+  if (!selectedCategory.value || selectedCategory.value === HUD_CATEGORY) return []
   const modules = isFavoritesSelected.value
     ? modulesStore.favoriteModules
     : modulesStore.byCategory[selectedCategory.value] || []
@@ -107,6 +130,25 @@ const filteredModules = computed(() => {
   })
 })
 
+const filteredHudElements = computed(() => {
+  const list = hudStore.orderedElements || []
+  return list.filter(element => {
+    if (!element.active) return false
+    const hasTextOutput = Array.isArray(element.lines) && element.lines.length > 0
+    if (!hasTextOutput) return false
+    if (hideDecoratedHud.value && element.hasNonText) return false
+    if (showActiveOnly.value && !element.active) return false
+    if (!searchQuery.value) return true
+    const term = searchQuery.value.toLowerCase()
+    return (
+      element.title.toLowerCase().includes(term) ||
+      element.description.toLowerCase().includes(term) ||
+      element.name.toLowerCase().includes(term) ||
+      element.group.toLowerCase().includes(term)
+    )
+  })
+})
+
 onMounted(() => {
   wsStore.connect()
 })
@@ -115,7 +157,10 @@ watch(
   () => modulesStore.categories,
   categories => {
     if (!categories.length) {
-      if (selectedCategory.value !== FAVORITES_CATEGORY) {
+      if (
+        selectedCategory.value !== FAVORITES_CATEGORY &&
+        selectedCategory.value !== HUD_CATEGORY
+      ) {
         selectedCategory.value = null
       }
       return
@@ -126,6 +171,7 @@ watch(
     }
     if (
       selectedCategory.value !== FAVORITES_CATEGORY &&
+      selectedCategory.value !== HUD_CATEGORY &&
       !categories.includes(selectedCategory.value)
     ) {
       selectedCategory.value = categories[0]
@@ -140,6 +186,14 @@ function openSettings(module: ModuleInfo) {
 
 function closeSettings() {
   activeModule.value = null
+}
+
+function openHudSettings(element: HudElementState) {
+  activeHudElement.value = element
+}
+
+function closeHudSettings() {
+  activeHudElement.value = null
 }
 </script>
 

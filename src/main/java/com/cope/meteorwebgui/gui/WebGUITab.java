@@ -2,6 +2,7 @@ package com.cope.meteorwebgui.gui;
 
 import com.cope.meteorwebgui.MeteorWebGUIAddon;
 import com.cope.meteorwebgui.systems.WebGUIConfig;
+import com.cope.meteorwebgui.util.BrowserHelper;
 import meteordevelopment.meteorclient.gui.GuiTheme;
 import meteordevelopment.meteorclient.gui.tabs.Tab;
 import meteordevelopment.meteorclient.gui.tabs.TabScreen;
@@ -62,9 +63,7 @@ public class WebGUITab extends Tab {
 
                 // URL info
                 String url = "http://" + WebGUIConfig.get().host.get() + ":" + WebGUIConfig.get().port.get();
-                buttonRow.add(theme.button("Copy URL")).expandX().widget().action = () -> {
-                    mc.keyboard.setClipboard(url);
-                };
+                buttonRow.add(theme.button("Open in Browser")).expandX().widget().action = () -> BrowserHelper.openUrl(url);
 
             } else {
                 buttonRow.add(theme.button("Start Server")).expandX().widget().action = () -> {

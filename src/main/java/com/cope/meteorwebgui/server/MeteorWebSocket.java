@@ -1,5 +1,7 @@
 package com.cope.meteorwebgui.server;
 
+import com.cope.meteorwebgui.mapping.HudMapper;
+import com.cope.meteorwebgui.mapping.HudMapper;
 import com.cope.meteorwebgui.mapping.ModuleMapper;
 import com.cope.meteorwebgui.mapping.RegistryProvider;
 import com.cope.meteorwebgui.mapping.SettingsReflector;
@@ -10,6 +12,7 @@ import com.google.gson.JsonObject;
 import fi.iki.elonen.NanoWSD;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.systems.hud.HudElement;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import org.slf4j.Logger;
@@ -37,6 +40,7 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
         try {
             JsonObject initialData = new JsonObject();
             initialData.add("modules", ModuleMapper.mapAllModulesByCategory());
+            initialData.add("hud", HudMapper.mapHudState());
 
             // Registry data is now loaded on-demand via REGISTRY_REQUEST
             WSMessage message = new WSMessage(MessageType.INITIAL_STATE, initialData);
@@ -73,6 +77,7 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
                 case SETTING_UPDATE -> handleSettingUpdate(wsMessage);
                 case SETTING_GET -> handleSettingGet(wsMessage);
                 case REGISTRY_REQUEST -> handleRegistryRequest(wsMessage);
+                case HUD_TOGGLE -> handleHudToggle(wsMessage);
                 case PING -> handlePing(wsMessage);
                 default -> sendError("Unsupported message type: " + type);
             }
@@ -145,14 +150,37 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
             JsonObject value = data.get("value").getAsJsonObject();
 
             Module module = Modules.get().get(moduleName);
-            if (module == null) {
-                sendError("Module not found: " + moduleName, message.getId());
+            if (module != null) {
+                Setting<?> setting = findSetting(module, settingName);
+                if (setting == null) {
+                    sendError("Setting not found: " + settingName, message.getId());
+                    return;
+                }
+
+                boolean success = SettingsReflector.setSettingValue(setting, value);
+
+                JsonObject response = new JsonObject();
+                response.addProperty("success", success);
+                response.addProperty("moduleName", moduleName);
+                response.addProperty("settingName", settingName);
+
+                send(GSON.toJson(new WSMessage("response", response, message.getId())));
+
+                if (success) {
+                    LOG.info("Updated setting: {}.{} = {}", moduleName, settingName, value);
+                }
                 return;
             }
 
-            Setting<?> setting = findSetting(module, settingName);
+            HudElement hudElement = HudMapper.findElement(moduleName);
+            if (hudElement == null) {
+                sendError("Config target not found: " + moduleName, message.getId());
+                return;
+            }
+
+            Setting<?> setting = findHudSetting(hudElement, settingName);
             if (setting == null) {
-                sendError("Setting not found: " + settingName, message.getId());
+                sendError("HUD setting not found: " + settingName, message.getId());
                 return;
             }
 
@@ -160,13 +188,13 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
 
             JsonObject response = new JsonObject();
             response.addProperty("success", success);
-            response.addProperty("moduleName", moduleName);
+            response.addProperty("elementName", HudMapper.getElementIdentifier(hudElement));
             response.addProperty("settingName", settingName);
 
             send(GSON.toJson(new WSMessage("response", response, message.getId())));
 
             if (success) {
-                LOG.info("Updated setting: {}.{} = {}", moduleName, settingName, value);
+                LOG.info("Updated HUD setting: {}.{} = {}", hudElement.info != null ? hudElement.info.name : hudElement.getClass().getSimpleName(), settingName, value);
             }
 
         } catch (Exception e) {
@@ -182,14 +210,29 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
             String settingName = data.get("settingName").getAsString();
 
             Module module = Modules.get().get(moduleName);
-            if (module == null) {
-                sendError("Module not found: " + moduleName, message.getId());
+            if (module != null) {
+                Setting<?> setting = findSetting(module, settingName);
+                if (setting == null) {
+                    sendError("Setting not found: " + settingName, message.getId());
+                    return;
+                }
+
+                JsonObject response = new JsonObject();
+                response.add("setting", SettingsReflector.getSettingMetadata(setting));
+
+                send(GSON.toJson(new WSMessage("response", response, message.getId())));
                 return;
             }
 
-            Setting<?> setting = findSetting(module, settingName);
+            HudElement hudElement = HudMapper.findElement(moduleName);
+            if (hudElement == null) {
+                sendError("Config target not found: " + moduleName, message.getId());
+                return;
+            }
+
+            Setting<?> setting = findHudSetting(hudElement, settingName);
             if (setting == null) {
-                sendError("Setting not found: " + settingName, message.getId());
+                sendError("HUD setting not found: " + settingName, message.getId());
                 return;
             }
 
@@ -201,6 +244,33 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
         } catch (Exception e) {
             LOG.error("Failed to get setting: {}", e.getMessage(), e);
             sendError("Failed to get setting: " + e.getMessage(), message.getId());
+        }
+    }
+
+    private void handleHudToggle(WSMessage message) {
+        try {
+            JsonObject data = message.getData().getAsJsonObject();
+            String elementName = data.get("elementName").getAsString();
+
+            HudElement element = HudMapper.findElement(elementName);
+            if (element == null) {
+                sendError("HUD element not found: " + elementName, message.getId());
+                return;
+            }
+
+            element.toggle();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+            response.addProperty("elementName", HudMapper.getElementIdentifier(element));
+            response.addProperty("active", element.isActive());
+
+            send(GSON.toJson(new WSMessage("response", response, message.getId())));
+
+            LOG.info("Toggled HUD element: {} -> {}", elementName, element.isActive());
+        } catch (Exception e) {
+            LOG.error("Failed to toggle HUD element: {}", e.getMessage(), e);
+            sendError("Failed to toggle HUD element: " + e.getMessage(), message.getId());
         }
     }
 
@@ -262,6 +332,17 @@ public class MeteorWebSocket extends NanoWSD.WebSocket {
 
     private Setting<?> findSetting(Module module, String settingName) {
         for (SettingGroup group : module.settings) {
+            for (Setting<?> setting : group) {
+                if (setting.name.equals(settingName)) {
+                    return setting;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Setting<?> findHudSetting(HudElement element, String settingName) {
+        for (SettingGroup group : element.settings) {
             for (Setting<?> setting : group) {
                 if (setting.name.equals(settingName)) {
                     return setting;
