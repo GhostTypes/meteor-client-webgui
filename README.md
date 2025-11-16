@@ -44,6 +44,11 @@
   <tr>
     <td>Fully Bundled</td>
     <td>Gradle builds the Vue 3 + TypeScript front-end, where it's served from within the addon
+  </tr>
+  <tr>
+    <td>Real-time HUD display</td>
+    <td>Live text previews of active HUD elements with automatic updates, state synchronization, and full settings control from the browser.</td>
+  </tr>
 </table>
 </div>
 
